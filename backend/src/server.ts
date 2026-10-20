@@ -2,9 +2,11 @@ import { app } from './app';
 import { config } from './config';
 import { prisma } from './db/prisma';
 
-const server = app.listen(config.port, () => {
-  console.log(`[PayFlow Sandbox Backend] running on port ${config.port} (env: ${config.nodeEnv})`);
-  console.log(`Health endpoint: http://localhost:${config.port}/api/v1/health`);
+const HOST = process.env.HOST || '0.0.0.0';
+
+const server = app.listen(config.port, HOST, () => {
+  console.log(`[PayFlow Sandbox Backend] running on http://${HOST}:${config.port} (env: ${config.nodeEnv})`);
+  console.log(`Health endpoint: http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${config.port}/api/v1/health`);
 });
 
 // Graceful shutdown

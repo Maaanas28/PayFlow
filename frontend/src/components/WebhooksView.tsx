@@ -14,7 +14,7 @@ import {
   Globe,
 } from 'lucide-react';
 import { WebhookEvent } from '../types';
-import { api } from '../services/api';
+import { api, BASE_URL } from '../services/api';
 import { StatusBadge } from './Badge';
 
 interface WebhooksViewProps {
@@ -22,6 +22,10 @@ interface WebhooksViewProps {
 }
 
 export const WebhooksView: React.FC<WebhooksViewProps> = ({ onNavigateToCheckout }) => {
+  const defaultWebhookTarget = BASE_URL
+    ? `${BASE_URL}/api/v1/webhooks/test-target`
+    : 'http://localhost:4000/api/v1/webhooks/test-target';
+
   const [events, setEvents] = useState<WebhookEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -29,9 +33,7 @@ export const WebhooksView: React.FC<WebhooksViewProps> = ({ onNavigateToCheckout
   const [deliveringId, setDeliveringId] = useState<string | null>(null);
   const [deliveryResult, setDeliveryResult] = useState<any | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
-  const [endpointUrl, setEndpointUrl] = useState<string>(
-    'http://localhost:4000/api/v1/webhooks/test-target'
-  );
+  const [endpointUrl, setEndpointUrl] = useState<string>(defaultWebhookTarget);
 
   const fetchEvents = async () => {
     try {
@@ -158,11 +160,11 @@ export const WebhooksView: React.FC<WebhooksViewProps> = ({ onNavigateToCheckout
             type="text"
             value={endpointUrl}
             onChange={(e) => setEndpointUrl(e.target.value)}
-            placeholder="http://localhost:4000/api/v1/webhooks/test-target"
+            placeholder={defaultWebhookTarget}
             className="w-full md:w-96 px-3 py-1.5 bg-slate-950 border border-slate-800 focus:border-teal-500 rounded-xl font-mono text-xs text-teal-300 outline-none transition-colors"
           />
           <button
-            onClick={() => setEndpointUrl('http://localhost:4000/api/v1/webhooks/test-target')}
+            onClick={() => setEndpointUrl(defaultWebhookTarget)}
             className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-xl text-xs whitespace-nowrap transition-colors cursor-pointer"
             title="Reset to default sandbox test receiver"
           >

@@ -9,7 +9,8 @@ import {
   WebhookEvent,
 } from '../types';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const rawBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
+export const BASE_URL = rawBaseUrl.replace(/\/+$/, '');
 
 async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const url = `${BASE_URL}${endpoint}`;

@@ -56,7 +56,22 @@ export class WebhookService {
       return event; // Already delivered, do not repeat
     }
 
-    const targetUrl = options?.targetUrl || event.targetUrl;
+    let targetUrl = options?.targetUrl || event.targetUrl;
+
+    // Normalize loopback destinations if dispatched to internal test receiver
+    if (targetUrl) {
+      if (targetUrl.startsWith('/')) {
+        targetUrl = `http://127.0.0.1:${config.port}${targetUrl}`;
+      } else if (
+        /^https?:\/\/(localhost|127\.0\.0\.1):4000\/api\/v1\/webhooks\/test-target/.test(targetUrl) &&
+        config.port !== 4000
+      ) {
+        targetUrl = targetUrl.replace(
+          /^https?:\/\/(localhost|127\.0\.0\.1):4000\/api\/v1\/webhooks\/test-target/,
+          `http://127.0.0.1:${config.port}/api/v1/webhooks/test-target`
+        );
+      }
+    }
     const attempts = event.attempts + 1;
     const maxAttempts = 5;
 

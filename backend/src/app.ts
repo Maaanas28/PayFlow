@@ -14,8 +14,26 @@ export function createApp(): Express {
   const app = express();
 
   // Basic Middleware
+  const configuredOrigins = config.corsOrigin === '*'
+    ? '*'
+    : config.corsOrigin
+        .split(',')
+        .map((origin) => origin.trim().replace(/\/+$/, ''))
+        .filter(Boolean);
+
+  const allowedOrigins = configuredOrigins === '*'
+    ? '*'
+    : Array.from(
+        new Set([
+          ...configuredOrigins,
+          'http://localhost:5173',
+          'http://127.0.0.1:5173',
+          'http://localhost:3000',
+        ])
+      );
+
   app.use(cors({
-    origin: config.corsOrigin === '*' ? '*' : [config.corsOrigin, 'http://localhost:5173', 'http://127.0.0.1:5173'],
+    origin: allowedOrigins,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Idempotency-Key', 'idempotency-key', 'X-PayFlow-Signature'],
   }));

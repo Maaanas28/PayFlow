@@ -394,6 +394,23 @@ npm run build
 
 ---
 
+## Render Deployment (Infrastructure as Code)
+
+PayFlow includes a root-level `render.yaml` Blueprint file configured for seamless deployment on Render:
+
+| Service | Type | Plan | Build / Start Command | Notes |
+| :--- | :--- | :--- | :--- | :--- |
+| **payflow-backend** | Web Service (`node`) | Free | `npm install && npm run prisma:generate && npm run build`<br>`preDeployCommand: npm run prisma:deploy`<br>`npm start` | Binds to `0.0.0.0:$PORT`. Health check at `/api/v1/health`. Non-destructive migrations run via `prisma migrate deploy`. |
+| **payflow-frontend** | Static Site (`static`) | Free | `npm install && npm run build`<br>Publish: `./dist` | Single-Page Application rewrites all routes (`/*` &rarr; `/index.html`). |
+| **payflow-postgres** | Managed PostgreSQL | Free | Managed by Render | Injects `DATABASE_URL` directly into the backend service. |
+
+> [!WARNING]
+> **Render Free Tier Limitations:**
+> 1. **PostgreSQL Expiration:** Render free PostgreSQL databases expire and are deleted after **30 days** unless upgraded to a paid plan ($7/mo Starter).
+> 2. **Web Service Inactivity:** Free web services spin down after 15 minutes of inactivity; initial cold starts take ~50 seconds.
+
+---
+
 ## Test Verification
 
 The test suite contains **68 automated tests** across 9 test suites executed via Vitest against both in-memory unit tests and live PostgreSQL integration tests:
