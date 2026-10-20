@@ -1,0 +1,181 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum OrderStatus {
+  CREATED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum PaymentStatus {
+  CREATED
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  UNCERTAIN
+}
+
+enum IdempotencyStatus {
+  PROCESSING
+  RESOLVED
+}
+
+enum LedgerEntryDirection {
+  DEBIT
+  CREDIT
+}
+
+enum LedgerAccountType {
+  CUSTOMER_FUNDS
+  MERCHANT_SETTLEMENT
+  REFUND_ESCROW
+  GATEWAY_FEES
+}
+
+enum RefundStatus {
+  CREATED
+  PROCESSING
+  SUCCEEDED
+  FAILED
+}
+
+enum WebhookEventStatus {
+  PENDING
+  DELIVERED
+  FAILED
+}
+
+model Order {
+  id                 String              @id @default(uuid())
+  productId          String              @map("product_id")
+  productName        String              @map("product_name")
+  quantity           Int
+  unitPriceMinor     Int                 @map("unit_price_minor")
+  totalPriceMinor    Int                 @map("total_price_minor")
+  currency           String              @default("INR")
+  status             OrderStatus         @default(CREATED)
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
+
+  payments           PaymentAttempt[]
+  idempotencyRecords IdempotencyRecord[]
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+model PaymentAttempt {
+  id               String        @id @default(uuid())
+  paymentReference String        @unique @map("payment_reference")
+  orderId          String        @map("order_id")
+  amountMinor      Int           @map("amount_minor")
+  currency         String        @default("INR")
+  status           PaymentStatus @default(CREATED)
+  provider         String        @default("MOCK_SANDBOX")
+  simulatedOutcome String        @map("simulated_outcome")
+  failureReason    String?       @map("failure_reason")
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
+
+  order            Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  refunds          Refund[]
+
+  @@index([orderId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("payment_attempts")
+}
+
+model IdempotencyRecord {
+  id           String            @id @default(uuid())
+  key          String            @unique @map("idempotency_key")
+  orderId      String            @map("order_id")
+  requestHash  String            @map("request_hash")
+  statusCode   Int?              @map("status_code")
+  responseBody Json?             @map("response_body")
+  status       IdempotencyStatus @default(PROCESSING)
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
+
+  order        Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([key])
+  @@index([orderId])
+  @@map("idempotency_records")
+}
+
+model LedgerTransaction {
+  id            String        @id @default(uuid())
+  referenceType String        @map("reference_type")
+  referenceId   String        @map("reference_id")
+  description   String
+  createdAt     DateTime      @default(now()) @map("created_at")
+
+  entries       LedgerEntry[]
+
+  @@unique([referenceType, referenceId])
+  @@index([referenceType, referenceId])
+  @@map("ledger_transactions")
+}
+
+model LedgerEntry {
+  id                  String               @id @default(uuid())
+  ledgerTransactionId String               @map("ledger_transaction_id")
+  accountType         LedgerAccountType    @map("account_type")
+  direction           LedgerEntryDirection
+  amountMinor         Int                  @map("amount_minor")
+  currency            String               @default("INR")
+  createdAt           DateTime             @default(now()) @map("created_at")
+
+  ledgerTransaction   LedgerTransaction    @relation(fields: [ledgerTransactionId], references: [id], onDelete: Cascade)
+
+  @@index([ledgerTransactionId])
+  @@index([accountType])
+  @@map("ledger_entries")
+}
+
+model Refund {
+  id               String         @id @default(uuid())
+  refundReference  String         @unique @map("refund_reference")
+  paymentAttemptId String         @map("payment_attempt_id")
+  amountMinor      Int            @map("amount_minor")
+  currency         String         @default("INR")
+  reason           String?
+  status           RefundStatus   @default(CREATED)
+  failureReason    String?        @map("failure_reason")
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @updatedAt @map("updated_at")
+
+  paymentAttempt   PaymentAttempt @relation(fields: [paymentAttemptId], references: [id], onDelete: Cascade)
+
+  @@index([paymentAttemptId])
+  @@index([status])
+  @@map("refunds")
+}
+
+model WebhookEvent {
+  id          String             @id @default(uuid())
+  eventType   String             @map("event_type")
+  payload     Json
+  targetUrl   String?            @map("target_url")
+  status      WebhookEventStatus @default(PENDING)
+  attempts    Int                @default(0)
+  lastError   String?            @map("last_error")
+  nextRetryAt DateTime?          @map("next_retry_at")
+  deliveredAt DateTime?          @map("delivered_at")
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([eventType])
+  @@index([createdAt])
+  @@map("webhook_events")
+}

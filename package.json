@@ -1,0 +1,14 @@
+{
+  "name": "payflow-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PayFlow Phase 1 - Core Payment Gateway Root Workspace",
+  "scripts": {
+    "test": "npm --prefix backend test",
+    "build:backend": "npm --prefix backend run build",
+    "build:frontend": "npm --prefix frontend run build",
+    "build": "npm run build:backend && npm run build:frontend",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev"
+  }
+}
