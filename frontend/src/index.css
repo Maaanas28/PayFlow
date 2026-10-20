@@ -4,51 +4,86 @@
 
 @layer base {
   body {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #080b10;
+    color: #f1f5f9;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-    background-color: #030712;
-    color: #f8fafc;
   }
 
-  /* Custom scrollbar */
+  /* Custom terminal scrollbars */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
+
   ::-webkit-scrollbar-track {
-    background: #0b0f19;
+    background: #0d121c;
   }
+
   ::-webkit-scrollbar-thumb {
     background: #1e293b;
-    border-radius: 9999px;
+    border-radius: 3px;
   }
+
   ::-webkit-scrollbar-thumb:hover {
     background: #334155;
   }
 }
 
+/* Institutional Terminal Background Grid Pattern */
+.terminal-grid {
+  background-size: 32px 32px;
+  background-image: 
+    linear-gradient(to right, rgba(27, 37, 59, 0.22) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(27, 37, 59, 0.22) 1px, transparent 1px);
+}
+
+/* Financial number tabular styling */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Smooth pulse for live status beacon */
+@keyframes live-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.85);
+  }
+}
+
+.animate-live {
+  animation: live-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Institutional Glass & Panel Utility Tokens */
 .glass-panel {
-  background: rgba(15, 23, 42, 0.78);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(13, 19, 31, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid #1b253b;
 }
 
 .glass-panel-subtle {
-  background: rgba(30, 41, 59, 0.5);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(16, 21, 32, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid #182030;
 }
 
 .glass-input {
-  background: rgba(11, 15, 25, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #101520;
+  border: 1px solid #182030;
   color: #f8fafc;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
 }
 
 .glass-input:focus {
-  border-color: #14b8a6;
+  border-color: #3b82f6;
   outline: none;
-  box-shadow: 0 0 0 2px rgba(20, 184, 166, 0.2);
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.4);
 }

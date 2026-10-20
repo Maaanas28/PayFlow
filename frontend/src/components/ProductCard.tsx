@@ -24,62 +24,78 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   };
 
   return (
-    <div className="glass-panel rounded-2xl p-6 relative overflow-hidden shadow-xl border border-slate-800 hover:border-slate-700/60 transition-all">
-      <div className="absolute top-0 right-0 transform translate-x-4 -translate-y-4 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
-
-      <div className="flex items-start justify-between">
+    <div className="bg-[#0d131f] border border-[#1b253b] hover:border-[#263553] rounded-md p-5 sm:p-6 shadow-terminal transition-all duration-200">
+      <div className="flex items-start justify-between gap-4">
         <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-            <Package className="w-6 h-6" />
+          <div className="w-10 h-10 rounded-sm bg-[#141d2d] border border-cyan-500/30 flex items-center justify-center text-cyan-400 shrink-0">
+            <Package className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-xs uppercase font-bold tracking-wider text-emerald-400">Fixed Catalog Item</span>
-            <h2 className="text-lg font-bold text-white tracking-tight">{product.name}</h2>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-cyan-400 font-mono px-1.5 py-0.2 rounded-sm bg-cyan-950/40 border border-cyan-800/40">
+                CATALOG SECURITY
+              </span>
+              <span className="text-[10px] font-mono text-slate-500">ID: {product.id}</span>
+            </div>
+            <h2 className="text-base font-bold text-white tracking-tight mt-1 font-mono">
+              {product.name}
+            </h2>
           </div>
         </div>
+
         <div className="text-right">
-          <div className="text-2xl font-black text-white">{formatINR(product.unitPriceMinor)}</div>
-          <span className="text-xs text-slate-400 font-mono">per sandbox license</span>
+          <div className="text-xl font-bold text-white font-mono tabular-nums">
+            {formatINR(product.unitPriceMinor)}
+          </div>
+          <span className="text-[10px] text-slate-500 font-mono block">
+            {product.unitPriceMinor} minor units
+          </span>
         </div>
       </div>
 
-      <p className="mt-4 text-sm text-slate-300 leading-relaxed">
+      <p className="mt-4 text-xs text-slate-300 leading-relaxed font-sans">
         {product.description}
       </p>
 
-      <div className="mt-5 pt-4 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-4">
+      <div className="mt-5 pt-4 border-t border-[#182030] flex flex-wrap items-center justify-between gap-4">
         <div>
-          <span className="text-xs font-medium text-slate-400 block mb-1">Select Quantity</span>
-          <div className="inline-flex items-center bg-slate-900 border border-slate-700/80 rounded-xl p-1">
+          <span className="text-[10px] font-mono font-semibold uppercase tracking-wider text-slate-400 block mb-1.5">
+            Select Order Quantity
+          </span>
+          <div className="inline-flex items-center bg-[#101520] border border-[#182030] rounded-sm p-0.5">
             <button
               onClick={() => onQuantityChange(Math.max(1, quantity - 1))}
               disabled={disabled || quantity <= 1}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+              className="w-7 h-7 rounded-sm flex items-center justify-center text-slate-400 hover:text-white hover:bg-[#161f30] disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer"
               aria-label="Decrease quantity"
             >
-              <Minus className="w-4 h-4" />
+              <Minus className="w-3.5 h-3.5" />
             </button>
-            <span className="w-10 text-center font-bold text-white font-mono text-sm">{quantity}</span>
+            <span className="w-10 text-center font-bold text-white font-mono text-xs tabular-nums">
+              {quantity}
+            </span>
             <button
               onClick={() => onQuantityChange(Math.min(10, quantity + 1))}
               disabled={disabled || quantity >= 10}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+              className="w-7 h-7 rounded-sm flex items-center justify-center text-slate-400 hover:text-white hover:bg-[#161f30] disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer"
               aria-label="Increase quantity"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
 
         <div className="text-right">
-          <span className="text-xs text-slate-400 block">Subtotal (Client Preview)</span>
-          <span className="text-lg font-extrabold text-emerald-400 font-mono">
+          <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block">
+            Subtotal (Client Preview)
+          </span>
+          <span className="text-lg font-bold text-emerald-400 font-mono tabular-nums">
             {formatINR(product.unitPriceMinor * quantity)}
           </span>
         </div>
       </div>
 
-      <div className="mt-5 space-y-2 text-xs text-slate-400 bg-slate-900/40 rounded-xl p-3 border border-slate-800/50">
+      <div className="mt-5 space-y-1.5 text-[11px] font-mono text-slate-400 bg-[#080d15] rounded-sm p-3 border border-[#182030]">
         <div className="flex items-center space-x-2">
           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
           <span>Server recalculates and asserts total amount to prevent client-side tampering</span>

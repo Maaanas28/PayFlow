@@ -7,15 +7,17 @@ import {
   XCircle,
   Copy,
   Check,
-  AlertTriangle,
   Loader2,
   Lock,
   AlertCircle,
   Globe,
+  Database,
+  Clock,
 } from 'lucide-react';
 import { WebhookEvent } from '../types';
 import { api, BASE_URL } from '../services/api';
-import { StatusBadge } from './Badge';
+import { StatusBadge, Badge } from './Badge';
+import { MetricCard } from './MetricCard';
 
 interface WebhooksViewProps {
   onNavigateToCheckout: () => void;
@@ -106,38 +108,50 @@ export const WebhooksView: React.FC<WebhooksViewProps> = ({ onNavigateToCheckout
   const failedCount = events.filter((e: WebhookEvent) => e.status === 'FAILED').length;
 
   return (
-    <div className="space-y-6">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-5">
+      {/* Top Header Command Strip */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#182030]">
         <div>
-          <h2 className="text-2xl font-extrabold text-white tracking-tight flex items-center space-x-2.5">
-            <Webhook className="w-6 h-6 text-teal-400" />
-            <span>Webhook Outbox & Cryptography</span>
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Reliable event persistence with exponential backoff retries and HMAC-SHA256 signatures.
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-bold text-white tracking-tight font-mono uppercase flex items-center space-x-2">
+              <Webhook className="w-5 h-5 text-cyan-400" />
+              <span>WEBHOOK OUTBOX & CRYPTOGRAPHY</span>
+            </h2>
+            <Badge variant="live" size="xs">
+              {events.length} EVENTS
+            </Badge>
+          </div>
+          <p className="text-xs text-slate-400 font-mono mt-0.5">
+            Reliable event persistence with exponential backoff retries and HMAC-SHA256 signatures
           </p>
         </div>
 
         <button
           onClick={fetchEvents}
           disabled={loading}
-          className="inline-flex items-center space-x-2 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 rounded-xl text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer self-start sm:self-auto"
+          className="inline-flex items-center space-x-2 px-3 py-1.5 bg-[#151e2f] hover:bg-[#1c283f] text-slate-200 border border-[#23304b] rounded-sm text-xs font-mono font-medium transition-all disabled:opacity-50 cursor-pointer self-start sm:self-auto"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-teal-400' : ''}`} />
-          <span>Refresh</span>
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-cyan-400' : ''}`} />
+          <span>Sync Outbox</span>
         </button>
       </div>
 
-      {/* Architecture Explainer */}
-      <div className="p-4 rounded-2xl bg-slate-900/70 border border-slate-800 text-xs sm:text-sm space-y-2">
-        <div className="flex items-center space-x-2 text-white font-bold">
-          <Lock className="w-4 h-4 text-teal-400" />
-          <span>Outbox Pattern & HMAC-SHA256 Signatures</span>
+      {error && (
+        <div className="p-3 rounded-sm bg-[#2a0e14] border border-[#6b1d28] text-xs font-mono text-rose-300 flex items-center space-x-2">
+          <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-400" />
+          <span>{error}</span>
         </div>
-        <p className="text-slate-400 text-xs leading-relaxed">
+      )}
+
+      {/* Architecture Explainer */}
+      <div className="p-3.5 rounded-sm bg-[#0d131f] border border-[#1b253b] text-xs font-mono space-y-1">
+        <div className="flex items-center space-x-2 text-white font-bold text-[11px] uppercase tracking-wider">
+          <Lock className="w-4 h-4 text-cyan-400" />
+          <span>OUTBOX PATTERN & HMAC-SHA256 CRYPTOGRAPHIC SIGNATURES</span>
+        </div>
+        <p className="text-slate-400 text-[11px] leading-relaxed">
           Events are transactionally saved directly into PostgreSQL alongside payments and refunds. Each payload is signed with a SHA-256 HMAC header:{' '}
-          <code className="text-teal-300 font-mono bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800">
+          <code className="text-cyan-300 font-mono bg-[#101520] px-1.5 py-0.5 rounded-sm border border-[#182030]">
             X-PayFlow-Signature: t=...,v1=...
           </code>
           . Delivered events are verified with constant-time equality checks to prevent timing attacks.
@@ -145,14 +159,14 @@ export const WebhooksView: React.FC<WebhooksViewProps> = ({ onNavigateToCheckout
       </div>
 
       {/* Sandbox Endpoint Configuration */}
-      <div className="p-4 rounded-2xl bg-slate-900/70 border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
-        <div className="space-y-1">
-          <div className="flex items-center space-x-2 text-white font-bold">
-            <Globe className="w-4 h-4 text-teal-400" />
-            <span>Sandbox Merchant Webhook Destination</span>
+      <div className="p-3.5 rounded-sm bg-[#0d131f] border border-[#1b253b] flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs font-mono">
+        <div className="space-y-0.5">
+          <div className="flex items-center space-x-2 text-white font-bold text-[11px] uppercase tracking-wider">
+            <Globe className="w-4 h-4 text-cyan-400" />
+            <span>Sandbox Merchant Destination URL</span>
           </div>
           <p className="text-slate-400 text-[11px]">
-            Target endpoint for live signature verification. Test Deliver dispatches a real signed HTTP POST.
+            Target endpoint for live signature verification. Test Deliver dispatches a signed HTTP POST.
           </p>
         </div>
         <div className="flex items-center space-x-2 w-full md:w-auto">
@@ -161,11 +175,11 @@ export const WebhooksView: React.FC<WebhooksViewProps> = ({ onNavigateToCheckout
             value={endpointUrl}
             onChange={(e) => setEndpointUrl(e.target.value)}
             placeholder={defaultWebhookTarget}
-            className="w-full md:w-96 px-3 py-1.5 bg-slate-950 border border-slate-800 focus:border-teal-500 rounded-xl font-mono text-xs text-teal-300 outline-none transition-colors"
+            className="w-full md:w-96 px-3 py-1.5 bg-[#101520] border border-[#182030] focus:border-cyan-500 rounded-sm font-mono text-xs text-cyan-300 outline-none transition-colors"
           />
           <button
             onClick={() => setEndpointUrl(defaultWebhookTarget)}
-            className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-xl text-xs whitespace-nowrap transition-colors cursor-pointer"
+            className="px-2.5 py-1.5 bg-[#151e2f] hover:bg-[#1c283f] text-slate-300 border border-[#23304b] rounded-sm text-xs whitespace-nowrap transition-colors cursor-pointer"
             title="Reset to default sandbox test receiver"
           >
             Reset
@@ -173,156 +187,167 @@ export const WebhooksView: React.FC<WebhooksViewProps> = ({ onNavigateToCheckout
         </div>
       </div>
 
-      {/* Stat Cards */}
+      {/* Finance OS Metric Strip */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <div className="glass-panel rounded-2xl p-4 sm:p-5 border border-slate-800 shadow-lg">
-          <span className="text-xs font-medium text-slate-400 block mb-1">Total Outbox Events</span>
-          <span className="text-2xl font-mono font-extrabold text-white">{events.length}</span>
-          <span className="block text-[11px] text-slate-500 mt-0.5">Persisted in PostgreSQL</span>
-        </div>
-
-        <div className="glass-panel rounded-2xl p-4 sm:p-5 border border-slate-800 shadow-lg">
-          <span className="text-xs font-medium text-slate-400 block mb-1">Delivered</span>
-          <span className="text-2xl font-mono font-extrabold text-emerald-400">
-            {deliveredCount}
-          </span>
-          <span className="block text-[11px] text-slate-500 mt-0.5">Verified signatures</span>
-        </div>
-
-        <div className="glass-panel rounded-2xl p-4 sm:p-5 border border-slate-800 shadow-lg">
-          <span className="text-xs font-medium text-slate-400 block mb-1">Pending Delivery</span>
-          <span className="text-2xl font-mono font-extrabold text-sky-400">{pendingCount}</span>
-          <span className="block text-[11px] text-slate-500 mt-0.5">Ready for dispatcher</span>
-        </div>
-
-        <div className="glass-panel rounded-2xl p-4 sm:p-5 border border-slate-800 shadow-lg">
-          <span className="text-xs font-medium text-slate-400 block mb-1">Failed Deliveries</span>
-          <span className="text-2xl font-mono font-extrabold text-rose-400">{failedCount}</span>
-          <span className="block text-[11px] text-slate-500 mt-0.5">Backoff retry scheduled</span>
-        </div>
+        <MetricCard
+          label="Total Outbox Events"
+          value={events.length}
+          subvalue="Persisted in PostgreSQL"
+          badgeText="OUTBOX"
+          badgeVariant="neutral"
+          icon={Database}
+        />
+        <MetricCard
+          label="Verified Delivered"
+          value={deliveredCount}
+          subvalue="Verified HMAC signatures"
+          status="gain"
+          badgeText="DELIVERED"
+          badgeVariant="gain"
+          icon={CheckCircle2}
+        />
+        <MetricCard
+          label="Pending Dispatch"
+          value={pendingCount}
+          subvalue="Awaiting delivery"
+          badgeText="QUEUED"
+          badgeVariant="info"
+          icon={Clock}
+        />
+        <MetricCard
+          label="Failed Deliveries"
+          value={failedCount}
+          subvalue="Backoff retry scheduled"
+          status={failedCount > 0 ? 'loss' : 'neutral'}
+          badgeText="RETRIES"
+          badgeVariant={failedCount > 0 ? 'loss' : 'neutral'}
+          icon={XCircle}
+        />
       </div>
 
-      {/* Error Banner */}
-      {error && (
-        <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl flex items-center space-x-3 text-rose-300 text-xs sm:text-sm">
-          <AlertCircle className="w-5 h-5 flex-shrink-0 text-rose-400" />
-          <span>{error}</span>
-        </div>
-      )}
-
-      {/* Delivery Feedback Banner */}
+      {/* Delivery Result Toast */}
       {deliveryResult && (
         <div
-          className={`p-4 rounded-xl border text-xs sm:text-sm flex items-center space-x-3 animate-in fade-in ${
+          className={`p-3 rounded-sm border flex items-center justify-between text-xs font-mono animate-in fade-in ${
             deliveryResult.status === 'DELIVERED'
-              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-              : 'bg-amber-500/10 border-amber-500/30 text-amber-300'
+              ? 'bg-[#062419] border-[#0d5c3a] text-emerald-300'
+              : 'bg-[#2a0e14] border-[#6b1d28] text-rose-300'
           }`}
         >
-          {deliveryResult.status === 'DELIVERED' ? (
-            <CheckCircle2 className="w-5 h-5 flex-shrink-0 text-emerald-400" />
-          ) : (
-            <AlertTriangle className="w-5 h-5 flex-shrink-0 text-amber-400" />
-          )}
-          <span>{deliveryResult.message}</span>
+          <div className="flex items-center space-x-2">
+            {deliveryResult.status === 'DELIVERED' ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+            ) : (
+              <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0" />
+            )}
+            <span>{deliveryResult.message}</span>
+          </div>
+          <button
+            onClick={() => setDeliveryResult(null)}
+            className="text-slate-400 hover:text-white p-0.5 cursor-pointer"
+          >
+            &times;
+          </button>
         </div>
       )}
 
-      {/* Events Table */}
-      <div className="glass-panel rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
-        <div className="p-4 sm:p-5 border-b border-slate-800/80 bg-slate-900/40 flex items-center justify-between">
+      {/* Outbox Table */}
+      <div className="bg-[#0d131f] rounded-sm border border-[#1b253b] overflow-hidden shadow-terminal font-mono">
+        <div className="p-3.5 border-b border-[#182030] bg-[#0a0e17] flex items-center justify-between">
           <div>
-            <h3 className="text-sm sm:text-base font-bold text-white">Outbox Event Queue</h3>
-            <p className="text-xs text-slate-400">
-              Select any event to inspect its cryptographic headers and payload.
+            <h3 className="text-xs font-bold uppercase tracking-wider text-white">
+              OUTBOX EVENT QUEUE
+            </h3>
+            <p className="text-[11px] text-slate-400">
+              Transactionally queued webhook payloads with cryptographic headers
             </p>
           </div>
-          <span className="text-xs bg-slate-800 px-2.5 py-1 rounded-md text-slate-300 font-mono">
-            {events.length} queued
-          </span>
+          <Badge variant="neutral" size="xs">
+            {events.length} QUEUED
+          </Badge>
         </div>
 
         {loading ? (
-          <div className="py-16 text-center text-slate-400 text-sm flex flex-col items-center justify-center space-y-3">
-            <RefreshCw className="w-7 h-7 animate-spin text-teal-400" />
-            <span>Loading PostgreSQL outbox events...</span>
+          <div className="py-16 text-center text-slate-400 text-xs flex flex-col items-center justify-center space-y-3">
+            <RefreshCw className="w-6 h-6 animate-spin text-cyan-400" />
+            <span>QUERYING WEBHOOK OUTBOX TABLE...</span>
           </div>
         ) : events.length === 0 ? (
-          <div className="py-16 text-center text-slate-400 text-sm flex flex-col items-center justify-center space-y-3">
-            <Webhook className="w-8 h-8 text-slate-600" />
+          <div className="py-16 text-center text-slate-400 text-xs flex flex-col items-center justify-center space-y-3">
+            <Webhook className="w-6 h-6 text-slate-600" />
             <div>
-              <p className="font-semibold text-slate-300">No webhook events recorded</p>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="font-bold text-slate-300">NO WEBHOOK EVENTS RECORDED</p>
+              <p className="text-[11px] text-slate-500 mt-1">
                 Trigger a payment or refund in the sandbox to automatically generate outbox events.
               </p>
             </div>
             <button
               onClick={onNavigateToCheckout}
-              className="mt-2 px-4 py-2 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold rounded-xl text-xs transition-colors cursor-pointer"
+              className="mt-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-sm text-xs transition-colors cursor-pointer"
             >
-              Go to Checkout
+              Go to Checkout Terminal
             </button>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-slate-800/80 bg-slate-900/60 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                  <th className="py-3 px-4 sm:px-6">Event ID</th>
-                  <th className="py-3 px-4">Event Type</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4">Attempts</th>
-                  <th className="py-3 px-4 hidden md:table-cell">Created</th>
-                  <th className="py-3 px-4 sm:px-6 text-right">Actions</th>
+                <tr className="border-b border-[#182030] bg-[#0a0e17] text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  <th className="py-2.5 px-4 sm:px-5">Event ID</th>
+                  <th className="py-2.5 px-4">Event Type</th>
+                  <th className="py-2.5 px-4">Status</th>
+                  <th className="py-2.5 px-4">Attempts</th>
+                  <th className="py-2.5 px-4 hidden md:table-cell">Timestamp</th>
+                  <th className="py-2.5 px-4 sm:px-5 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/50 text-xs sm:text-sm">
+              <tbody className="divide-y divide-[#141a27]">
                 {events.map((event: WebhookEvent) => (
                   <tr
                     key={event.id}
                     onClick={() => setSelectedEvent(event)}
-                    className="hover:bg-slate-800/30 transition-colors cursor-pointer"
+                    className="hover:bg-[#121824] transition-colors cursor-pointer"
                   >
-                    <td className="py-3.5 px-4 sm:px-6">
+                    <td className="py-3 px-4 sm:px-5">
                       <div className="flex items-center space-x-2">
                         <span className="font-mono text-xs font-bold text-white select-all">
                           {event.id.slice(0, 8)}...{event.id.slice(-4)}
                         </span>
                         <button
                           onClick={(e) => handleCopy(event.id, event.id, e)}
-                          className="text-slate-500 hover:text-white p-0.5"
+                          className="text-slate-500 hover:text-white p-0.5 cursor-pointer"
                         >
                           {copiedKey === event.id ? (
-                            <Check className="w-3.5 h-3.5 text-emerald-400" />
+                            <Check className="w-3 h-3 text-emerald-400" />
                           ) : (
-                            <Copy className="w-3.5 h-3.5" />
+                            <Copy className="w-3 h-3" />
                           )}
                         </button>
                       </div>
                     </td>
 
-                    <td className="py-3.5 px-4 font-mono text-teal-300 font-semibold text-xs">
+                    <td className="py-3 px-4 font-mono text-cyan-300 font-bold text-xs">
                       {event.eventType}
                     </td>
 
-                    <td className="py-3.5 px-4">
-                      <StatusBadge status={event.status} />
+                    <td className="py-3 px-4">
+                      <StatusBadge status={event.status} size="sm" />
                     </td>
 
-                    <td className="py-3.5 px-4 font-mono text-xs text-slate-300">
-                      {event.attempts} / {event.maxAttempts || 5}
+                    <td className="py-3 px-4 font-mono text-xs text-slate-300 tabular-nums">
+                      {event.attempts} / 5
                       {event.nextRetryAt && event.status !== 'DELIVERED' && (
-                        <span className="block text-[10px] text-amber-400/80">
+                        <span className="block text-[10px] text-amber-400">
                           Retry: {new Date(event.nextRetryAt).toLocaleTimeString()}
                         </span>
                       )}
                     </td>
 
-                    <td className="py-3.5 px-4 hidden md:table-cell font-mono text-xs text-slate-400">
+                    <td className="py-3 px-4 hidden md:table-cell font-mono text-[11px] text-slate-400 tabular-nums">
                       {new Date(event.createdAt).toLocaleTimeString()}
                     </td>
 
-                    <td className="py-3.5 px-4 sm:px-6 text-right">
+                    <td className="py-3 px-4 sm:px-5 text-right">
                       <div
                         className="inline-flex items-center space-x-2"
                         onClick={(e) => e.stopPropagation()}
@@ -330,7 +355,7 @@ export const WebhooksView: React.FC<WebhooksViewProps> = ({ onNavigateToCheckout
                         <button
                           onClick={() => handleDeliver(event.id, false)}
                           disabled={deliveringId === event.id}
-                          className="inline-flex items-center space-x-1 px-2.5 py-1 bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 rounded-lg text-xs font-semibold border border-teal-500/30 transition-colors cursor-pointer disabled:opacity-50"
+                          className="inline-flex items-center space-x-1 px-2.5 py-1 bg-[#141d2d] hover:bg-[#1c283f] text-cyan-400 rounded-sm text-xs font-semibold border border-cyan-500/40 transition-colors cursor-pointer disabled:opacity-50"
                           title="Deliver to configured webhook destination"
                         >
                           {deliveringId === event.id ? (
@@ -343,7 +368,7 @@ export const WebhooksView: React.FC<WebhooksViewProps> = ({ onNavigateToCheckout
 
                         <button
                           onClick={() => setSelectedEvent(event)}
-                          className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium border border-slate-700 transition-colors"
+                          className="px-2 py-1 bg-[#101622] hover:bg-[#151c2a] text-slate-300 rounded-sm text-xs font-medium border border-[#182030] transition-colors cursor-pointer"
                         >
                           Payload
                         </button>
@@ -359,23 +384,23 @@ export const WebhooksView: React.FC<WebhooksViewProps> = ({ onNavigateToCheckout
 
       {/* Selected Event Payload Modal */}
       {selectedEvent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="glass-panel w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl p-6 border border-slate-700 shadow-2xl space-y-4">
-            <div className="flex items-start justify-between pb-3 border-b border-slate-800">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="bg-[#0d131f] w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-sm p-5 border border-[#1b253b] shadow-2xl space-y-4 font-mono text-xs">
+            <div className="flex items-start justify-between pb-3 border-b border-[#182030]">
               <div>
                 <div className="flex items-center space-x-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-teal-400 font-mono">
+                  <span className="text-xs font-bold uppercase tracking-wider text-cyan-400">
                     {selectedEvent.eventType}
                   </span>
-                  <StatusBadge status={selectedEvent.status} />
+                  <StatusBadge status={selectedEvent.status} size="sm" />
                 </div>
-                <h3 className="font-mono text-sm text-slate-300 mt-1 select-all">
-                  Event ID: {selectedEvent.id}
+                <h3 className="text-xs text-slate-400 mt-1 select-all">
+                  Event ID: <span className="text-white font-bold">{selectedEvent.id}</span>
                 </h3>
               </div>
               <button
                 onClick={() => setSelectedEvent(null)}
-                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+                className="p-1 rounded-sm text-slate-400 hover:text-white hover:bg-[#121824] cursor-pointer"
               >
                 <XCircle className="w-5 h-5" />
               </button>
@@ -383,48 +408,56 @@ export const WebhooksView: React.FC<WebhooksViewProps> = ({ onNavigateToCheckout
 
             {/* Delivery Info */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
-              <div className="p-2.5 bg-slate-900 rounded-xl">
-                <span className="text-slate-400 block">Attempts:</span>
-                <span className="font-mono font-bold text-white">
-                  {selectedEvent.attempts} of {selectedEvent.maxAttempts || 5}
+              <div className="p-2.5 bg-[#101520] rounded-sm border border-[#182030]">
+                <span className="text-[10px] text-slate-500 uppercase tracking-wider block">
+                  Attempts:
+                </span>
+                <span className="font-bold text-white tabular-nums">
+                  {selectedEvent.attempts} of 5
                 </span>
               </div>
-              <div className="p-2.5 bg-slate-900 rounded-xl">
-                <span className="text-slate-400 block">Delivered At:</span>
-                <span className="font-mono text-emerald-400">
+              <div className="p-2.5 bg-[#101520] rounded-sm border border-[#182030]">
+                <span className="text-[10px] text-slate-500 uppercase tracking-wider block">
+                  Delivered At:
+                </span>
+                <span className="text-emerald-400 tabular-nums">
                   {selectedEvent.deliveredAt
                     ? new Date(selectedEvent.deliveredAt).toLocaleString()
                     : 'Pending / Not Delivered'}
                 </span>
               </div>
-              <div className="p-2.5 bg-slate-900 rounded-xl col-span-2 sm:col-span-1">
-                <span className="text-slate-400 block">Next Retry:</span>
-                <span className="font-mono text-amber-300">
+              <div className="p-2.5 bg-[#101520] rounded-sm border border-[#182030] col-span-2 sm:col-span-1">
+                <span className="text-[10px] text-slate-500 uppercase tracking-wider block">
+                  Next Retry:
+                </span>
+                <span className="text-amber-300 tabular-nums">
                   {selectedEvent.nextRetryAt
                     ? new Date(selectedEvent.nextRetryAt).toLocaleTimeString()
                     : 'None Scheduled'}
                 </span>
               </div>
-              <div className="p-2.5 bg-slate-900 rounded-xl col-span-2 sm:col-span-3">
-                <span className="text-slate-400 block">Destination Endpoint:</span>
-                <span className="font-mono text-teal-300 text-[11px] break-all">
+              <div className="p-2.5 bg-[#101520] rounded-sm border border-[#182030] col-span-2 sm:col-span-3">
+                <span className="text-[10px] text-slate-500 uppercase tracking-wider block">
+                  Destination Endpoint:
+                </span>
+                <span className="text-cyan-300 text-[11px] break-all">
                   {selectedEvent.targetUrl || 'Not configured in event (targetUrl omitted)'}
                 </span>
               </div>
             </div>
 
             {selectedEvent.lastError && (
-              <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-300 text-xs">
-                <span className="font-bold">Last Delivery Error:</span> {selectedEvent.lastError}
+              <div className="p-3 bg-[#2a0e14] border border-[#6b1d28] rounded-sm text-rose-300 text-xs">
+                <span className="font-bold">LAST DELIVERY ERROR:</span> {selectedEvent.lastError}
               </div>
             )}
 
             {/* Cryptographic Signature & Headers */}
             <div className="space-y-1.5">
-              <span className="text-xs font-bold uppercase text-slate-400">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                 Cryptographic Signature Headers (Generated on dispatch)
               </span>
-              <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 font-mono text-[11px] text-teal-300 space-y-1">
+              <div className="p-3 bg-[#080d15] rounded-sm border border-[#182030] text-[11px] text-cyan-300 space-y-1">
                 <div>X-PayFlow-Event-Id: {selectedEvent.id}</div>
                 <div>X-PayFlow-Event-Type: {selectedEvent.eventType}</div>
                 <div className="text-slate-400">
@@ -436,32 +469,32 @@ export const WebhooksView: React.FC<WebhooksViewProps> = ({ onNavigateToCheckout
             {/* JSON Payload Viewer */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between text-xs text-slate-400">
-                <span className="font-bold uppercase">JSON Payload</span>
+                <span className="font-bold uppercase tracking-wider text-[10px]">JSON Payload</span>
                 <button
                   onClick={() =>
                     handleCopy(JSON.stringify(selectedEvent.payload, null, 2), 'payload')
                   }
-                  className="flex items-center space-x-1 hover:text-white"
+                  className="flex items-center space-x-1 hover:text-white cursor-pointer"
                 >
                   {copiedKey === 'payload' ? (
                     <Check className="w-3.5 h-3.5 text-emerald-400" />
                   ) : (
                     <Copy className="w-3.5 h-3.5" />
                   )}
-                  <span>Copy Payload</span>
+                  <span>Copy JSON</span>
                 </button>
               </div>
-              <pre className="p-4 bg-slate-950 rounded-xl border border-slate-800 font-mono text-xs text-emerald-400 overflow-x-auto max-h-64">
+              <pre className="p-4 bg-[#080d15] rounded-sm border border-[#182030] font-mono text-xs text-emerald-400 overflow-x-auto max-h-64">
                 {JSON.stringify(selectedEvent.payload, null, 2)}
               </pre>
             </div>
 
             {/* Action Bar inside modal */}
-            <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-slate-800">
+            <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-[#182030]">
               <button
                 onClick={() => handleDeliver(selectedEvent.id, true)}
                 disabled={deliveringId === selectedEvent.id}
-                className="px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                className="px-3 py-1.5 bg-[#2a0e14] hover:bg-[#3d141e] text-rose-300 border border-[#6b1d28] rounded-sm text-xs font-semibold transition-colors cursor-pointer"
                 title="Force a delivery failure to inspect backoff retry logic"
               >
                 Simulate Delivery Failure
@@ -470,12 +503,12 @@ export const WebhooksView: React.FC<WebhooksViewProps> = ({ onNavigateToCheckout
               <button
                 onClick={() => handleDeliver(selectedEvent.id, false)}
                 disabled={deliveringId === selectedEvent.id}
-                className="px-4 py-2 bg-teal-500 hover:bg-teal-400 text-slate-950 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center space-x-1.5"
+                className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-sm text-xs font-bold transition-colors cursor-pointer flex items-center space-x-1.5"
               >
                 {deliveringId === selectedEvent.id ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 ) : (
-                  <Send className="w-4 h-4" />
+                  <Send className="w-3.5 h-3.5" />
                 )}
                 <span>Deliver to Test Receiver</span>
               </button>

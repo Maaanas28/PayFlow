@@ -11,10 +11,13 @@ import {
   ShieldAlert,
   Loader2,
   AlertCircle,
+  Coins,
+  Lock,
 } from 'lucide-react';
 import { Refund, PaymentAttempt } from '../types';
 import { api } from '../services/api';
-import { StatusBadge } from './Badge';
+import { StatusBadge, Badge } from './Badge';
+import { MetricCard } from './MetricCard';
 
 interface RefundsViewProps {
   initialPaymentId?: string;
@@ -42,6 +45,20 @@ export const RefundsView: React.FC<RefundsViewProps> = ({
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
+  const formatINR = (minorUnits: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 2,
+    }).format(minorUnits / 100);
+  };
+
+  const handleCopy = (text: string, key: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKey(key);
+    setTimeout(() => setCopiedKey(null), 2000);
+  };
+
   const fetchRefunds = async () => {
     try {
       setLoading(true);
@@ -59,84 +76,78 @@ export const RefundsView: React.FC<RefundsViewProps> = ({
     fetchRefunds();
   }, []);
 
-  useEffect(() => {
-    if (initialPaymentId) {
-      handleLookupPayment(initialPaymentId);
-    }
-  }, [initialPaymentId]);
-
-  const handleLookupPayment = async (queryToSearch?: string) => {
-    const q = (queryToSearch || paymentQuery).trim();
-    if (!q) return;
+  const handleLookupPayment = async (lookupId?: string) => {
+    const idToFind = (lookupId || paymentQuery).trim();
+    if (!idToFind) return;
 
     try {
       setSearchingPayment(true);
       setRefundError(null);
-      const payment = await api.getPayment(q);
+      const payment = await api.getPayment(idToFind);
       setTargetPayment(payment);
-
-      // If successful, pre-fill
-      if (payment.status !== 'SUCCEEDED') {
-        setRefundError(
-          `Payment is in '${payment.status}' state. Only SUCCEEDED payments can be refunded.`
-        );
-      }
     } catch (err: any) {
       setTargetPayment(null);
-      setRefundError(err.message || `Payment '${q}' not found`);
+      setRefundError(
+        err.message || `Payment '${idToFind}' not found in PostgreSQL database.`
+      );
     } finally {
       setSearchingPayment(false);
     }
   };
 
-  const handleCopy = (text: string, key: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedKey(key);
-    setTimeout(() => setCopiedKey(null), 2000);
+  useEffect(() => {
+    if (initialPaymentId) {
+      setPaymentQuery(initialPaymentId);
+      handleLookupPayment(initialPaymentId);
+    }
+  }, [initialPaymentId]);
+
+  // Compute live refundable balance for current target payment
+  const computeRefundableBalance = (payment: PaymentAttempt | null): number => {
+    if (!payment) return 0;
+    if (payment.status !== 'SUCCEEDED') return 0;
+    const existingRefunds = payment.refunds || [];
+    const successfulRefundsSum = existingRefunds
+      .filter((r) => r.status === 'SUCCEEDED')
+      .reduce((sum, r) => sum + r.amountMinor, 0);
+    return Math.max(0, payment.amountMinor - successfulRefundsSum);
   };
 
-  const formatINR = (minorUnits: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-    }).format(minorUnits / 100);
+  const refundableBalance = computeRefundableBalance(targetPayment);
+
+  const calculateProposedRefundMinor = (): number => {
+    if (!targetPayment) return 0;
+    if (refundMode === 'FULL') {
+      return refundableBalance;
+    }
+    const val = parseFloat(partialAmountRupees);
+    if (isNaN(val) || val <= 0) return 0;
+    return Math.round(val * 100);
   };
 
-  // Calculate target payment balance
-  const targetRefunds = targetPayment?.refunds || [];
-  const targetTotalRefunded = targetRefunds
-    .filter((r: Refund) => r.status === 'SUCCEEDED' || r.status === 'PROCESSING')
-    .reduce((sum: number, r: Refund) => sum + r.amountMinor, 0);
-  const targetRemainingRefundable = targetPayment
-    ? Math.max(0, targetPayment.amountMinor - targetTotalRefunded)
-    : 0;
+  const proposedRefundMinor = calculateProposedRefundMinor();
 
-  // Execute Refund
   const handleExecuteRefund = async () => {
     if (!targetPayment) return;
+
+    const amountMinor = refundMode === 'PARTIAL' ? proposedRefundMinor : undefined;
+
+    if (refundMode === 'PARTIAL') {
+      if (proposedRefundMinor <= 0) {
+        setRefundError('Please specify a positive refund amount.');
+        return;
+      }
+      if (proposedRefundMinor > refundableBalance) {
+        setRefundError(
+          `Requested refund of ${formatINR(proposedRefundMinor)} exceeds refundable balance of ${formatINR(refundableBalance)}.`
+        );
+        return;
+      }
+    }
 
     try {
       setIsRefunding(true);
       setRefundError(null);
-      setSuccessMessage(null);
-
-      let amountMinor: number | undefined;
-      if (refundMode === 'PARTIAL') {
-        const parsed = parseFloat(partialAmountRupees);
-        if (isNaN(parsed) || parsed <= 0) {
-          throw new Error('Please enter a valid partial refund amount in ₹');
-        }
-        amountMinor = Math.round(parsed * 100);
-
-        if (amountMinor > targetRemainingRefundable) {
-          throw new Error(
-            `Refund amount ₹${parsed.toFixed(
-              2
-            )} exceeds remaining refundable balance of ${formatINR(targetRemainingRefundable)}`
-          );
-        }
-      }
-
       await api.createRefund(
         targetPayment.id,
         amountMinor,
@@ -168,95 +179,99 @@ export const RefundsView: React.FC<RefundsViewProps> = ({
     .reduce((sum: number, r: Refund) => sum + r.amountMinor, 0);
 
   return (
-    <div className="space-y-6">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-5">
+      {/* Top Header Command Strip */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#182030]">
         <div>
-          <h2 className="text-2xl font-extrabold text-white tracking-tight flex items-center space-x-2.5">
-            <RotateCcw className="w-6 h-6 text-purple-400" />
-            <span>Refunds Management</span>
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Execute full or partial refunds with database-level row locking and over-refund prevention.
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-bold text-white tracking-tight font-mono uppercase flex items-center space-x-2">
+              <RotateCcw className="w-5 h-5 text-cyan-400" />
+              <span>REFUNDS ESCROW MATRIX</span>
+            </h2>
+            <Badge variant="live" size="xs">
+              {refunds.length} EXECUTED
+            </Badge>
+          </div>
+          <p className="text-xs text-slate-400 font-mono mt-0.5">
+            Execute full or partial refunds with database-level row locking and over-refund prevention
           </p>
         </div>
 
         <button
           onClick={fetchRefunds}
           disabled={loading}
-          className="inline-flex items-center space-x-2 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 rounded-xl text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer self-start sm:self-auto"
+          className="inline-flex items-center space-x-2 px-3 py-1.5 bg-[#151e2f] hover:bg-[#1c283f] text-slate-200 border border-[#23304b] rounded-sm text-xs font-mono font-medium transition-all disabled:opacity-50 cursor-pointer self-start sm:self-auto"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-purple-400' : ''}`} />
-          <span>Refresh</span>
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-cyan-400' : ''}`} />
+          <span>Sync Feed</span>
         </button>
       </div>
 
-      {/* Stat Cards */}
+      {/* Finance OS Metric Strip */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="glass-panel rounded-2xl p-4 sm:p-5 border border-slate-800 shadow-lg">
-          <span className="text-xs font-medium text-slate-400 block mb-1">
-            Total Gateway Refunded
-          </span>
-          <span className="text-2xl font-mono font-extrabold text-purple-400">
-            {formatINR(totalRefundAmountAcrossGateway)}
-          </span>
-          <span className="block text-[11px] text-slate-500 font-mono mt-0.5">
-            {totalRefundAmountAcrossGateway} paise
-          </span>
-        </div>
-
-        <div className="glass-panel rounded-2xl p-4 sm:p-5 border border-slate-800 shadow-lg">
-          <span className="text-xs font-medium text-slate-400 block mb-1">Total Refunds Count</span>
-          <span className="text-2xl font-mono font-extrabold text-white">{refunds.length}</span>
-          <span className="block text-[11px] text-slate-500 mt-0.5">Successful records</span>
-        </div>
-
-        <div className="glass-panel rounded-2xl p-4 sm:p-5 border border-slate-800 shadow-lg">
-          <span className="text-xs font-medium text-slate-400 block mb-1">Concurrency Lock</span>
-          <span className="text-base font-semibold text-emerald-400 flex items-center space-x-1.5 mt-1">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-            <span>Row-Level Serialized</span>
-          </span>
-          <span className="block text-[11px] text-slate-500 mt-0.5">
-            SELECT FOR UPDATE Protected
-          </span>
-        </div>
+        <MetricCard
+          label="Total Gateway Refunded"
+          value={formatINR(totalRefundAmountAcrossGateway)}
+          subvalue={`${totalRefundAmountAcrossGateway.toLocaleString()} paise`}
+          badgeText="ESCROW"
+          badgeVariant="warn"
+          icon={Coins}
+        />
+        <MetricCard
+          label="Total Refunds Executed"
+          value={refunds.length}
+          subvalue="Database records"
+          badgeText="POSTED"
+          badgeVariant="gain"
+          icon={RotateCcw}
+        />
+        <MetricCard
+          label="Concurrency Protection"
+          value="SERIALIZED"
+          subvalue="Pessimistic FOR UPDATE row lock"
+          status="gain"
+          badgeText="LOCKED"
+          badgeVariant="live"
+          icon={Lock}
+        />
       </div>
 
       {/* Error Banner */}
       {error && (
-        <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl flex items-center space-x-3 text-rose-300 text-xs sm:text-sm">
-          <AlertCircle className="w-5 h-5 flex-shrink-0 text-rose-400" />
+        <div className="p-3 bg-[#2a0e14] border border-[#6b1d28] rounded-sm flex items-center space-x-2 text-rose-300 text-xs font-mono">
+          <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-400" />
           <span>{error}</span>
         </div>
       )}
 
       {/* Success Notification */}
       {successMessage && (
-        <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-center space-x-3 text-emerald-300 text-xs sm:text-sm animate-in fade-in">
-          <CheckCircle2 className="w-5 h-5 flex-shrink-0 text-emerald-400" />
+        <div className="p-3 bg-[#062419] border border-[#0d5c3a] rounded-sm flex items-center space-x-2 text-emerald-300 text-xs font-mono animate-in fade-in">
+          <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-emerald-400" />
           <span>{successMessage}</span>
         </div>
       )}
 
       {/* Issue Refund Interactive Console */}
-      <div className="glass-panel rounded-2xl p-6 border border-slate-800 shadow-xl space-y-5">
-        <div className="flex items-center space-x-2.5 pb-4 border-b border-slate-800">
-          <div className="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+      <div className="bg-[#0d131f] rounded-sm p-5 border border-[#1b253b] shadow-terminal space-y-4 font-mono">
+        <div className="flex items-center space-x-2.5 pb-3 border-b border-[#182030]">
+          <div className="w-7 h-7 rounded-sm bg-[#141d2d] border border-cyan-500/40 flex items-center justify-center text-cyan-400">
             <RotateCcw className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-white">Issue a Full or Partial Refund</h3>
-            <p className="text-xs text-slate-400">
-              Select or search any captured payment attempt to refund safely.
+            <h3 className="text-xs font-bold text-white uppercase tracking-wider">
+              ISSUE FULL OR PARTIAL REVERSAL
+            </h3>
+            <p className="text-[11px] text-slate-400">
+              Select or search any captured payment attempt to refund safely under row locks
             </p>
           </div>
         </div>
 
         {/* Payment Search Input */}
         <div>
-          <label className="block text-xs font-medium text-slate-400 mb-1.5">
-            Enter Payment Attempt Reference (e.g. <span className="font-mono text-purple-400">pay_...</span>) or Database UUID
+          <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1.5">
+            Enter Payment Attempt Reference (e.g. <span className="text-cyan-400">pay_...</span>) or Database UUID
           </label>
           <div className="flex space-x-2">
             <div className="relative flex-1">
@@ -266,13 +281,13 @@ export const RefundsView: React.FC<RefundsViewProps> = ({
                 onChange={(e) => setPaymentQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleLookupPayment()}
                 placeholder="e.g. pay_1729420000000_abc123"
-                className="w-full glass-input px-4 py-2.5 rounded-xl text-xs sm:text-sm font-mono placeholder-slate-600"
+                className="w-full bg-[#101520] border border-[#182030] text-xs font-mono text-slate-100 placeholder:text-slate-500 px-3 py-2 rounded-sm focus:outline-none focus:border-cyan-500/50"
               />
             </div>
             <button
               onClick={() => handleLookupPayment()}
               disabled={searchingPayment || !paymentQuery.trim()}
-              className="px-4 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs flex items-center space-x-2 transition-colors disabled:opacity-50 cursor-pointer"
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-sm text-xs flex items-center space-x-2 transition-colors disabled:opacity-50 cursor-pointer"
             >
               {searchingPayment ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -286,236 +301,271 @@ export const RefundsView: React.FC<RefundsViewProps> = ({
 
         {/* Target Payment State Card */}
         {targetPayment && (
-          <div className="p-4 bg-slate-900/80 rounded-xl border border-slate-800 space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-800">
+          <div className="p-4 bg-[#101520] rounded-sm border border-[#182030] space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#182030]">
               <div className="flex items-center space-x-2">
-                <CreditCard className="w-4 h-4 text-teal-400" />
-                <span className="font-mono text-xs sm:text-sm font-bold text-white">
+                <CreditCard className="w-4 h-4 text-cyan-400" />
+                <span className="font-mono text-xs font-bold text-white">
                   {targetPayment.paymentReference}
                 </span>
-                <StatusBadge status={targetPayment.status} />
+                <StatusBadge status={targetPayment.status} size="sm" />
               </div>
-              <span className="text-xs text-slate-500 font-mono">
+              <span className="text-[11px] text-slate-500 font-mono">
                 Order: {targetPayment.orderId}
               </span>
             </div>
 
-            {/* Financial Ledger Balance Breakdown */}
-            <div className="grid grid-cols-3 gap-2.5 text-center sm:text-left">
-              <div className="p-3 bg-slate-950/60 rounded-lg border border-slate-800/80">
-                <span className="text-[10px] sm:text-xs text-slate-400 block">Captured</span>
-                <span className="text-xs sm:text-sm font-mono font-extrabold text-emerald-400">
+            {/* Financial Overview Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <div className="p-3 bg-[#0d131f] rounded-sm border border-[#182030]">
+                <span className="text-[10px] text-slate-500 uppercase tracking-wider block">
+                  Original Captured
+                </span>
+                <span className="text-base font-bold text-white font-mono tabular-nums">
                   {formatINR(targetPayment.amountMinor)}
                 </span>
-              </div>
-              <div className="p-3 bg-slate-950/60 rounded-lg border border-slate-800/80">
-                <span className="text-[10px] sm:text-xs text-slate-400 block">Already Refunded</span>
-                <span className="text-xs sm:text-sm font-mono font-extrabold text-purple-400">
-                  {formatINR(targetTotalRefunded)}
+                <span className="block text-[10px] text-slate-500 font-mono">
+                  {targetPayment.amountMinor} paise
                 </span>
               </div>
-              <div className="p-3 bg-slate-950/60 rounded-lg border border-slate-800/80">
-                <span className="text-[10px] sm:text-xs text-slate-400 block">
-                  Remaining Refundable
+
+              <div className="p-3 bg-[#0d131f] rounded-sm border border-[#182030]">
+                <span className="text-[10px] text-slate-500 uppercase tracking-wider block">
+                  Already Refunded
                 </span>
-                <span className="text-xs sm:text-sm font-mono font-extrabold text-teal-300">
-                  {formatINR(targetRemainingRefundable)}
+                <span className="text-base font-bold text-amber-400 font-mono tabular-nums">
+                  {formatINR(targetPayment.amountMinor - refundableBalance)}
+                </span>
+                <span className="block text-[10px] text-slate-500 font-mono">
+                  {(targetPayment.amountMinor - refundableBalance)} paise
+                </span>
+              </div>
+
+              <div className="p-3 bg-[#0d131f] rounded-sm border border-[#182030]">
+                <span className="text-[10px] text-slate-500 uppercase tracking-wider block">
+                  Available to Refund
+                </span>
+                <span
+                  className={`text-base font-bold font-mono tabular-nums ${
+                    refundableBalance > 0 ? 'text-emerald-400' : 'text-slate-500'
+                  }`}
+                >
+                  {formatINR(refundableBalance)}
+                </span>
+                <span className="block text-[10px] text-slate-500 font-mono">
+                  {refundableBalance} paise remaining
                 </span>
               </div>
             </div>
 
-            {/* Refund Configuration Options */}
-            {targetRemainingRefundable > 0 && targetPayment.status === 'SUCCEEDED' ? (
-              <div className="space-y-3 pt-2">
-                <div className="flex items-center space-x-4">
-                  <label className="flex items-center space-x-2 text-xs text-slate-300 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="refundMode"
-                      checked={refundMode === 'FULL'}
-                      onChange={() => setRefundMode('FULL')}
-                      className="accent-purple-500"
-                    />
-                    <span>
-                      Full Refund (<strong>{formatINR(targetRemainingRefundable)}</strong>)
-                    </span>
+            {/* Validation / Execution Section */}
+            {targetPayment.status !== 'SUCCEEDED' ? (
+              <div className="p-3 bg-[#2a0e14] border border-[#6b1d28] rounded-sm text-xs text-rose-300 flex items-center space-x-2">
+                <AlertTriangle className="w-4 h-4 flex-shrink-0 text-rose-400" />
+                <span>
+                  Payments with status <strong className="text-white">{targetPayment.status}</strong> cannot be refunded. Only SUCCEEDED payments have settled funds.
+                </span>
+              </div>
+            ) : refundableBalance <= 0 ? (
+              <div className="p-3 bg-[#291a03] border border-[#6e4606] rounded-sm text-xs text-amber-300 flex items-center space-x-2">
+                <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-amber-400" />
+                <span>This transaction is fully refunded. No additional balance remains.</span>
+              </div>
+            ) : (
+              <div className="space-y-4 pt-2">
+                {/* Mode Select */}
+                <div>
+                  <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1.5">
+                    Select Reversal Mode
                   </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setRefundMode('FULL')}
+                      className={`p-3 rounded-sm border text-left transition-all cursor-pointer ${
+                        refundMode === 'FULL'
+                          ? 'border-cyan-500/80 bg-[#141d2d] text-white shadow-sm'
+                          : 'border-[#182030] bg-[#0d131f] text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      <div className="font-bold text-xs">Full Reversal</div>
+                      <div className="text-[11px] text-cyan-300 mt-0.5 tabular-nums">
+                        Refund entire remaining {formatINR(refundableBalance)}
+                      </div>
+                    </button>
 
-                  <label className="flex items-center space-x-2 text-xs text-slate-300 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="refundMode"
-                      checked={refundMode === 'PARTIAL'}
-                      onChange={() => setRefundMode('PARTIAL')}
-                      className="accent-purple-500"
-                    />
-                    <span>Partial Refund</span>
-                  </label>
+                    <button
+                      type="button"
+                      onClick={() => setRefundMode('PARTIAL')}
+                      className={`p-3 rounded-sm border text-left transition-all cursor-pointer ${
+                        refundMode === 'PARTIAL'
+                          ? 'border-cyan-500/80 bg-[#141d2d] text-white shadow-sm'
+                          : 'border-[#182030] bg-[#0d131f] text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      <div className="font-bold text-xs">Partial Reversal</div>
+                      <div className="text-[11px] text-slate-400 mt-0.5">
+                        Specify exact amount &le; {formatINR(refundableBalance)}
+                      </div>
+                    </button>
+                  </div>
                 </div>
 
+                {/* Partial Amount Input */}
                 {refundMode === 'PARTIAL' && (
                   <div>
-                    <label className="block text-xs font-medium text-slate-400 mb-1">
-                      Partial Amount in Rupees (Max {formatINR(targetRemainingRefundable)})
+                    <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1.5">
+                      Partial Amount in Rupees (₹)
                     </label>
                     <div className="relative">
-                      <span className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-slate-500 font-mono text-sm">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">
                         ₹
                       </span>
                       <input
                         type="number"
                         step="0.01"
-                        min="1"
-                        max={(targetRemainingRefundable / 100).toString()}
+                        min="0.01"
+                        max={(refundableBalance / 100).toFixed(2)}
                         value={partialAmountRupees}
                         onChange={(e) => setPartialAmountRupees(e.target.value)}
-                        placeholder="0.00"
-                        className="w-full glass-input pl-8 pr-4 py-2 rounded-xl text-xs sm:text-sm font-mono"
+                        placeholder={`e.g. ${(refundableBalance / 200).toFixed(2)}`}
+                        className="w-full bg-[#0d131f] border border-[#182030] text-xs font-mono text-slate-100 placeholder:text-slate-500 pl-8 pr-4 py-2 rounded-sm focus:outline-none focus:border-cyan-500/50"
                       />
                     </div>
                   </div>
                 )}
 
+                {/* Reason Input */}
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">
-                    Reason for Refund
+                  <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1.5">
+                    Reversal Reason (Optional)
                   </label>
                   <input
                     type="text"
                     value={refundReason}
                     onChange={(e) => setRefundReason(e.target.value)}
-                    placeholder="e.g. Customer return, duplicate order, sandbox test"
-                    className="w-full glass-input px-4 py-2 rounded-xl text-xs sm:text-sm"
+                    placeholder="e.g. Customer return, cancellation, damaged goods"
+                    className="w-full bg-[#0d131f] border border-[#182030] text-xs font-mono text-slate-100 placeholder:text-slate-500 px-3 py-2 rounded-sm focus:outline-none focus:border-cyan-500/50"
                   />
                 </div>
 
+                {refundError && (
+                  <div className="p-2.5 bg-[#2a0e14] border border-[#6b1d28] rounded-sm text-xs text-rose-300 font-mono">
+                    {refundError}
+                  </div>
+                )}
+
+                {/* Action Button */}
                 <button
+                  type="button"
                   onClick={() => setConfirmModalOpen(true)}
                   disabled={
-                    isRefunding ||
-                    (refundMode === 'PARTIAL' &&
-                      (!partialAmountRupees || parseFloat(partialAmountRupees) <= 0))
+                    proposedRefundMinor <= 0 ||
+                    proposedRefundMinor > refundableBalance ||
+                    isRefunding
                   }
-                  className="w-full py-2.5 px-4 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs sm:text-sm flex items-center justify-center space-x-2 transition-all disabled:opacity-50 cursor-pointer shadow-lg shadow-purple-600/20"
+                  className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase tracking-wider rounded-sm shadow-sm flex items-center justify-center space-x-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
-                  <RotateCcw className="w-4 h-4" />
-                  <span>
-                    Confirm & Execute {refundMode === 'FULL' ? 'Full' : 'Partial'} Refund
-                  </span>
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Execute Reversal {formatINR(proposedRefundMinor)}</span>
                 </button>
               </div>
-            ) : (
-              <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg text-amber-300 text-xs flex items-center space-x-2">
-                <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-                <span>
-                  {targetRemainingRefundable <= 0
-                    ? 'This payment has been fully refunded. No refundable balance remaining.'
-                    : 'Payment must be in SUCCEEDED state to execute refunds.'}
-                </span>
-              </div>
             )}
-          </div>
-        )}
-
-        {refundError && (
-          <div className="p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-xl flex items-start space-x-2.5 text-rose-300 text-xs">
-            <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5 text-rose-400" />
-            <div>
-              <span className="font-bold">Refund Error:</span> {refundError}
-            </div>
           </div>
         )}
       </div>
 
       {/* All Refunds History Table */}
-      <div className="glass-panel rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
-        <div className="p-4 sm:p-5 border-b border-slate-800/80 bg-slate-900/40 flex items-center justify-between">
+      <div className="bg-[#0d131f] rounded-sm border border-[#1b253b] overflow-hidden shadow-terminal font-mono">
+        <div className="p-3.5 border-b border-[#182030] bg-[#0a0e17] flex items-center justify-between">
           <div>
-            <h3 className="text-sm sm:text-base font-bold text-white">Historical Gateway Refunds</h3>
-            <p className="text-xs text-slate-400">
-              Audit log of all refund executions and balanced ledger reversals.
+            <h3 className="text-xs font-bold uppercase tracking-wider text-white">
+              HISTORICAL GATEWAY REVERSALS
+            </h3>
+            <p className="text-[11px] text-slate-400">
+              Audit log of all refund executions and balanced ledger reversals
             </p>
           </div>
-          <span className="text-xs bg-slate-800 px-2.5 py-1 rounded-md text-slate-300 font-mono">
-            {refunds.length} recorded
-          </span>
+          <Badge variant="neutral" size="xs">
+            {refunds.length} RECORDED
+          </Badge>
         </div>
 
         {loading ? (
-          <div className="py-16 text-center text-slate-400 text-sm flex flex-col items-center justify-center space-y-3">
-            <RefreshCw className="w-7 h-7 animate-spin text-purple-400" />
-            <span>Loading PostgreSQL refunds...</span>
+          <div className="py-16 text-center text-slate-400 text-xs flex flex-col items-center justify-center space-y-3">
+            <RefreshCw className="w-6 h-6 animate-spin text-cyan-400" />
+            <span>QUERYING POSTGRESQL REFUND RECORDS...</span>
           </div>
         ) : refunds.length === 0 ? (
-          <div className="py-16 text-center text-slate-400 text-sm flex flex-col items-center justify-center space-y-3">
-            <RotateCcw className="w-8 h-8 text-slate-600" />
+          <div className="py-16 text-center text-slate-400 text-xs flex flex-col items-center justify-center space-y-3">
+            <RotateCcw className="w-6 h-6 text-slate-600" />
             <div>
-              <p className="font-semibold text-slate-300">No refunds recorded yet</p>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="font-bold text-slate-300">NO REFUNDS RECORDED YET</p>
+              <p className="text-[11px] text-slate-500 mt-1">
                 Once a captured payment is refunded, its record and reverse ledger entries appear here.
               </p>
             </div>
             <button
               onClick={onNavigateToCheckout}
-              className="mt-2 px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs transition-colors cursor-pointer"
+              className="mt-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-sm text-xs transition-colors cursor-pointer"
             >
-              Go to Checkout
+              Go to Checkout Terminal
             </button>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-slate-800/80 bg-slate-900/60 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                  <th className="py-3 px-4 sm:px-6">Refund Reference</th>
-                  <th className="py-3 px-4">Amount (INR)</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4 hidden sm:table-cell">Reason</th>
-                  <th className="py-3 px-4 hidden md:table-cell">Created At</th>
+                <tr className="border-b border-[#182030] bg-[#0a0e17] text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  <th className="py-2.5 px-4 sm:px-5">Refund Reference</th>
+                  <th className="py-2.5 px-4">Amount (INR)</th>
+                  <th className="py-2.5 px-4">Status</th>
+                  <th className="py-2.5 px-4 hidden sm:table-cell">Reason</th>
+                  <th className="py-2.5 px-4 hidden md:table-cell">Timestamp</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/50 text-xs sm:text-sm">
+              <tbody className="divide-y divide-[#141a27]">
                 {refunds.map((refund: Refund) => (
-                  <tr key={refund.id} className="hover:bg-slate-800/30 transition-colors">
-                    <td className="py-3.5 px-4 sm:px-6">
+                  <tr key={refund.id} className="hover:bg-[#121824] transition-colors">
+                    <td className="py-3 px-4 sm:px-5">
                       <div className="flex items-center space-x-2">
-                        <span className="font-mono font-bold text-white">
+                        <span className="font-bold text-white">
                           {refund.refundReference}
                         </span>
                         <button
                           onClick={() => handleCopy(refund.refundReference, refund.id)}
-                          className="text-slate-500 hover:text-white p-0.5"
+                          className="text-slate-500 hover:text-white p-0.5 cursor-pointer"
                         >
                           {copiedKey === refund.id ? (
-                            <Check className="w-3.5 h-3.5 text-emerald-400" />
+                            <Check className="w-3 h-3 text-emerald-400" />
                           ) : (
-                            <Copy className="w-3.5 h-3.5" />
+                            <Copy className="w-3 h-3" />
                           )}
                         </button>
                       </div>
-                      <span className="text-[11px] font-mono text-slate-500 block">
+                      <span className="text-[10px] text-slate-500 block truncate max-w-[220px]">
                         Payment: {refund.paymentAttemptId}
                       </span>
                     </td>
 
-                    <td className="py-3.5 px-4">
-                      <span className="font-mono font-extrabold text-purple-300">
+                    <td className="py-3 px-4">
+                      <span className="font-bold text-cyan-300 tabular-nums">
                         {formatINR(refund.amountMinor)}
                       </span>
-                      <span className="block font-mono text-[10px] text-slate-500">
+                      <span className="block text-[10px] text-slate-500 tabular-nums">
                         {refund.amountMinor} paise
                       </span>
                     </td>
 
-                    <td className="py-3.5 px-4">
-                      <StatusBadge status={refund.status} />
+                    <td className="py-3 px-4">
+                      <StatusBadge status={refund.status} size="sm" />
                     </td>
 
-                    <td className="py-3.5 px-4 hidden sm:table-cell text-xs text-slate-300">
+                    <td className="py-3 px-4 hidden sm:table-cell text-xs text-slate-300">
                       {refund.reason || 'No reason specified'}
                     </td>
 
-                    <td className="py-3.5 px-4 hidden md:table-cell text-xs text-slate-400 font-mono">
+                    <td className="py-3 px-4 hidden md:table-cell text-[11px] text-slate-400 tabular-nums">
                       {new Date(refund.createdAt).toLocaleString()}
                     </td>
                   </tr>
@@ -528,47 +578,57 @@ export const RefundsView: React.FC<RefundsViewProps> = ({
 
       {/* Confirmation Modal */}
       {confirmModalOpen && targetPayment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="glass-panel w-full max-w-md rounded-2xl p-6 border border-slate-700 shadow-2xl space-y-4">
-            <div className="flex items-center space-x-3 text-purple-400">
-              <ShieldAlert className="w-6 h-6 flex-shrink-0" />
-              <h3 className="text-base font-bold text-white">Confirm Consequential Refund</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-[#0d131f] rounded-sm border border-[#1b253b] max-w-md w-full p-5 space-y-4 shadow-2xl font-mono text-xs">
+            <div className="flex items-center space-x-2 text-white">
+              <ShieldAlert className="w-5 h-5 text-amber-400" />
+              <h3 className="text-sm font-bold uppercase tracking-wider">CONFIRM TRANSACTION REVERSAL</h3>
             </div>
 
-            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-              Are you sure you want to refund{' '}
-              <strong className="text-white font-mono">
-                {refundMode === 'FULL'
-                  ? formatINR(targetRemainingRefundable)
-                  : `₹${parseFloat(partialAmountRupees).toFixed(2)}`}
-              </strong>{' '}
-              for payment attempt <span className="font-mono text-purple-300">{targetPayment.paymentReference}</span>?
+            <p className="text-slate-400 leading-relaxed text-xs">
+              You are about to issue a refund of{' '}
+              <strong className="text-white">{formatINR(proposedRefundMinor)}</strong> for payment{' '}
+              <span className="text-cyan-400">{targetPayment.paymentReference}</span>.
             </p>
 
-            <div className="p-3 bg-slate-900 rounded-xl text-xs text-slate-400 space-y-1">
-              <div>• Deducts funds from Merchant Settlement Account</div>
-              <div>• Re-credits Customer Funds via balanced ledger entries</div>
-              <div>• Cannot be undone once committed to PostgreSQL</div>
+            <div className="p-3 bg-[#101520] rounded-sm border border-[#182030] space-y-1.5 text-[11px]">
+              <div className="flex justify-between text-slate-400">
+                <span>Refund Mode:</span>
+                <span className="text-white font-bold">{refundMode}</span>
+              </div>
+              <div className="flex justify-between text-slate-400">
+                <span>Refund Amount:</span>
+                <span className="text-cyan-400 font-bold">{formatINR(proposedRefundMinor)}</span>
+              </div>
+              <div className="flex justify-between text-slate-400">
+                <span>Remaining Balance:</span>
+                <span className="text-emerald-400 font-bold">
+                  {formatINR(refundableBalance - proposedRefundMinor)}
+                </span>
+              </div>
+              <div className="flex justify-between text-slate-400">
+                <span>Concurrency Protection:</span>
+                <span className="text-white">PostgreSQL Row Lock</span>
+              </div>
             </div>
 
-            <div className="flex space-x-3 pt-2">
+            <div className="flex justify-end space-x-2 pt-2">
               <button
+                type="button"
                 onClick={() => setConfirmModalOpen(false)}
-                className="flex-1 py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                disabled={isRefunding}
+                className="px-3 py-1.5 bg-[#101622] hover:bg-[#151c2a] text-slate-300 rounded-sm font-medium border border-[#182030] cursor-pointer"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={handleExecuteRefund}
                 disabled={isRefunding}
-                className="flex-1 py-2 px-3 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold transition-colors disabled:opacity-50 cursor-pointer flex items-center justify-center space-x-1.5"
+                className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-sm flex items-center space-x-1.5 cursor-pointer"
               >
-                {isRefunding ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <RotateCcw className="w-4 h-4" />
-                )}
-                <span>Confirm Refund</span>
+                {isRefunding && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                <span>Confirm & Post</span>
               </button>
             </div>
           </div>
