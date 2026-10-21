@@ -8,10 +8,10 @@ import {
   Terminal,
   ChevronLeft,
   ChevronRight,
-  ShieldCheck,
   Activity,
 } from 'lucide-react';
 import { NavTab } from './Header';
+import { LogoIcon } from './LogoIcon';
 
 interface SidebarProps {
   activeTab: NavTab;
@@ -51,12 +51,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <aside
-      className={`fixed md:static inset-y-0 left-0 z-40 bg-[#0c1017] border-r border-[#182030] flex flex-col h-full transition-all duration-200 ease-in-out select-none ${
+      className={`fixed md:static inset-y-0 left-0 z-40 bg-black border-r border-neutral-900 flex flex-col h-full transition-all duration-200 ease-in-out select-none ${
         isMobile ? 'w-64' : isCollapsed ? 'w-16' : 'w-64'
       }`}
     >
       {/* Brand Header */}
-      <div className="h-14 flex items-center px-4 border-b border-[#182030] justify-between">
+      <div className="h-14 flex items-center px-4 border-b border-neutral-900 justify-between">
         <div
           onClick={onGoToLanding}
           className={`flex items-center gap-2.5 overflow-hidden ${
@@ -64,15 +64,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
           }`}
           title={onGoToLanding ? 'Return to Landing Page' : undefined}
         >
-          <div className="w-8 h-8 rounded-sm bg-[#141d2d] border border-cyan-500/30 group-hover:border-cyan-400 flex items-center justify-center shrink-0 shadow-sm shadow-cyan-500/20 transition-colors">
-            <ShieldCheck className="w-4 h-4 text-cyan-400" />
-          </div>
+          <LogoIcon className="w-6 h-6 shrink-0" />
           {(!isCollapsed || isMobile) && (
             <div className="flex flex-col">
-              <span className="font-mono font-bold text-sm tracking-wider text-white flex items-center gap-1.5 group-hover:text-cyan-300 transition-colors">
-                PAYFLOW <span className="text-cyan-400 text-xs px-1 py-0.2 rounded bg-cyan-950/60 border border-cyan-800/40">SANDBOX</span>
+              <span className="font-mono font-bold text-sm tracking-wider text-white flex items-center gap-1.5 group-hover:text-neutral-300 transition-colors">
+                PAYFLOW <span className="text-neutral-400 text-xs px-1 py-0.2 rounded bg-neutral-900 border border-neutral-800">SANDBOX</span>
               </span>
-              <span className="text-[9px] uppercase tracking-widest text-slate-500 font-mono">
+              <span className="text-[9px] uppercase tracking-widest text-neutral-500 font-mono">
                 INSTITUTIONAL v1.0
               </span>
             </div>
@@ -84,7 +82,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button
             onClick={onToggleCollapse}
             title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
-            className="hidden md:flex p-1 rounded text-slate-400 hover:text-white hover:bg-[#121824] transition-colors cursor-pointer"
+            className="hidden md:flex p-1 rounded text-neutral-400 hover:text-white hover:bg-neutral-900 transition-colors cursor-pointer"
           >
             {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
           </button>
@@ -101,21 +99,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <button
               key={item.id}
               onClick={() => handleSelect(item.id)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-sm text-xs font-mono transition-all duration-150 group relative cursor-pointer text-left ${
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded text-xs font-mono transition-all duration-150 group relative cursor-pointer text-left ${
                 isActive
-                  ? 'bg-[#141d2d] text-white font-bold border-l-2 border-emerald-400 shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-[#101622]'
+                  ? 'bg-neutral-900 text-white font-bold border-l-2 border-white shadow-sm'
+                  : 'text-neutral-400 hover:text-white hover:bg-neutral-950'
               }`}
             >
-              <Icon className={`w-4 h-4 shrink-0 transition-transform group-hover:scale-105 ${isActive ? 'text-emerald-400' : 'text-slate-500'}`} />
+              <Icon className={`w-4 h-4 shrink-0 transition-transform group-hover:scale-105 ${isActive ? 'text-white' : 'text-neutral-500'}`} />
               {(!isCollapsed || isMobile) && (
                 <span className="flex-1 truncate tracking-wide">{item.label}</span>
               )}
               {(!isCollapsed || isMobile) && item.badge && (
-                <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded-sm border ${
+                <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded border ${
                   isActive
-                    ? 'bg-[#092218] text-emerald-400 border-emerald-800/50'
-                    : 'bg-[#121926] text-slate-400 border-[#1c273a]'
+                    ? 'bg-neutral-800 text-white border-neutral-700'
+                    : 'bg-black text-neutral-500 border-neutral-850'
                 }`}>
                   {item.badge}
                 </span>
@@ -126,16 +124,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Audit Tooling & Bottom Status */}
-      <div className="p-2 border-t border-[#182030] space-y-2">
+      <div className="p-2 border-t border-neutral-900 space-y-2">
         <button
           onClick={onOpenLookup}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-sm text-xs font-mono text-slate-300 hover:text-white hover:bg-[#121824] border border-[#1b253b] transition-colors cursor-pointer"
+          className="w-full flex items-center gap-3 px-3 py-2 rounded text-xs font-mono text-neutral-300 hover:text-white hover:bg-neutral-900 border border-neutral-850 transition-colors cursor-pointer"
         >
-          <Terminal className="w-4 h-4 text-cyan-400 shrink-0" />
+          <Terminal className="w-4 h-4 text-neutral-400 shrink-0" />
           {(!isCollapsed || isMobile) && (
             <div className="flex items-center justify-between flex-1">
               <span>Audit Terminal</span>
-              <kbd className="px-1.5 py-0.5 text-[9px] font-mono text-slate-400 bg-[#162032] border border-[#233148] rounded-sm">
+              <kbd className="px-1.5 py-0.5 text-[9px] font-mono text-neutral-400 bg-neutral-900 border border-neutral-800 rounded">
                 Ctrl K
               </kbd>
             </div>
@@ -143,16 +141,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </button>
 
         {(!isCollapsed || isMobile) && (
-          <div className="px-2 py-2 rounded-sm bg-[#090d14] border border-[#141a26] text-[10px] font-mono flex items-center justify-between">
-            <span className="text-slate-500 flex items-center gap-1.5">
-              <Activity className="w-3 h-3 text-slate-400" />
+          <div className="px-2 py-2 rounded bg-black border border-neutral-900 text-[10px] font-mono flex items-center justify-between">
+            <span className="text-neutral-500 flex items-center gap-1.5">
+              <Activity className="w-3 h-3 text-neutral-400" />
               <span>CORE GATEWAY</span>
             </span>
             <span className={`inline-flex items-center gap-1 font-bold ${
-              backendOnline ? 'text-emerald-400' : backendOnline === false ? 'text-rose-400' : 'text-amber-400'
+              backendOnline ? 'text-white' : backendOnline === false ? 'text-neutral-500' : 'text-neutral-400'
             }`}>
               <span className={`w-1.5 h-1.5 rounded-full ${
-                backendOnline ? 'bg-emerald-400 animate-pulse' : backendOnline === false ? 'bg-rose-400' : 'bg-amber-400'
+                backendOnline ? 'bg-white animate-pulse' : 'bg-neutral-600'
               }`} />
               {backendOnline ? 'ONLINE' : backendOnline === false ? 'OFFLINE' : 'CHECKING'}
             </span>

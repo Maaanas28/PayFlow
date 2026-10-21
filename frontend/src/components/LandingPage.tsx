@@ -3,16 +3,15 @@ import { LogoIcon } from './LogoIcon';
 import {
   ArrowRight,
   Terminal,
-  ShieldCheck,
-  RotateCcw,
   BookOpen,
   Lock,
-  Copy,
-  Check,
-  Zap,
-  Code2,
+  Server,
+  Database,
+  Building2,
+  Smartphone,
+  Play,
+  Pause,
   Coins,
-  Cpu,
 } from 'lucide-react';
 import { NavTab } from './Header';
 
@@ -21,154 +20,131 @@ interface LandingPageProps {
   backendOnline: boolean | null;
 }
 
-type FlowMode = 'idle' | 'charging' | 'settled' | 'refunding' | 'refunded' | 'idempotent';
+const SINGLE_PAGE_CSS = `
+  .cf-root { background: #000; }
+
+  /* Minimal dark sub-pixel grid */
+  .terminal-grid {
+    background-image:
+      linear-gradient(to right, rgba(255,255,255,0.035) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,0.035) 1px, transparent 1px);
+    background-size: 36px 36px;
+    -webkit-mask-image: radial-gradient(ellipse at 50% 40%, #000 40%, transparent 85%);
+            mask-image: radial-gradient(ellipse at 50% 40%, #000 40%, transparent 85%);
+  }
+
+  /* Animated traveling conduit pulse */
+  .animate-pipe-flow {
+    stroke-dasharray: 6 6;
+    animation: pipe-flow 0.9s linear infinite;
+  }
+  @keyframes pipe-flow { to { stroke-dashoffset: -24; } }
+
+  .animate-pipe-reverse {
+    stroke-dasharray: 6 6;
+    animation: pipe-flow 0.9s linear infinite reverse;
+  }
+
+  /* Traveling cash note chip */
+  @keyframes packet-drift {
+    0%   { transform: translateX(0px); opacity: 0; }
+    15%  { opacity: 1; }
+    85%  { opacity: 1; }
+    100% { transform: translateX(100px); opacity: 0; }
+  }
+
+  .glow-box {
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+  }
+  .glow-box:hover {
+    border-color: rgba(255,255,255,0.3);
+    box-shadow: 0 0 20px -5px rgba(255,255,255,0.08);
+  }
+
+  /* Node active pulse */
+  @keyframes node-glow {
+    0%, 100% { border-color: rgba(255,255,255,0.4); box-shadow: 0 0 15px -3px rgba(255,255,255,0.12); }
+    50%      { border-color: rgba(255,255,255,0.7); box-shadow: 0 0 25px -2px rgba(255,255,255,0.22); }
+  }
+  .node-pulse {
+    animation: node-glow 2.4s ease-in-out infinite;
+  }
+`;
 
 export function LandingPage({ onEnterApp, backendOnline }: LandingPageProps) {
-  // Cash Flow Simulator Interactive State
-  const [flowMode, setFlowMode] = useState<FlowMode>('idle');
-  const [flowStep, setFlowStep] = useState<number>(0);
-  const [activeCodeTab, setActiveCodeTab] = useState<'curl' | 'sdk' | 'webhook'>('curl');
-  const [copiedCode, setCopiedCode] = useState(false);
+  const [isStreaming, setIsStreaming] = useState<boolean>(true);
+  const [activeStage, setActiveStage] = useState<number>(2);
+  const [direction, setDirection] = useState<'forward' | 'reverse'>('forward');
 
-  // Live simulation counter for visual dynamism
-  const [liveCounter, setLiveCounter] = useState({
-    transactions: 14820,
-    volumeMinor: 1480518000,
+  // Live simulation counters
+  const [stats, setStats] = useState({
+    transactions: 28410,
+    settledRupees: 28381590,
+    variance: '0.0000',
   });
 
+  // Cycle system stages continuously for aesthetic motion
   useEffect(() => {
-    const timer = setInterval(() => {
-      setLiveCounter((prev) => ({
+    if (!isStreaming) return;
+    const interval = setInterval(() => {
+      setActiveStage((prev) => (prev % 4) + 1);
+      setStats((prev) => ({
         transactions: prev.transactions + 1,
-        volumeMinor: prev.volumeMinor + 99900,
+        settledRupees: prev.settledRupees + 999,
+        variance: '0.0000',
       }));
-    }, 4500);
-    return () => clearInterval(timer);
-  }, []);
+    }, 2200);
+    return () => clearInterval(interval);
+  }, [isStreaming]);
 
-  // Trigger cash flow sequence animation
-  const triggerFlow = (mode: 'charge' | 'refund' | 'idempotent') => {
-    if (mode === 'charge') {
-      setFlowMode('charging');
-      setFlowStep(1);
-      setTimeout(() => setFlowStep(2), 700);
-      setTimeout(() => setFlowStep(3), 1500);
-      setTimeout(() => {
-        setFlowStep(4);
-        setFlowMode('settled');
-      }, 2300);
-    } else if (mode === 'refund') {
-      setFlowMode('refunding');
-      setFlowStep(1);
-      setTimeout(() => setFlowStep(2), 800);
-      setTimeout(() => {
-        setFlowStep(3);
-        setFlowMode('refunded');
-      }, 1800);
-    } else {
-      setFlowMode('idempotent');
-      setFlowStep(1);
-      setTimeout(() => setFlowStep(2), 700);
-      setTimeout(() => {
-        setFlowStep(3);
-        setFlowMode('settled');
-      }, 1500);
-    }
+  const toggleReverse = () => {
+    setDirection((prev) => (prev === 'forward' ? 'reverse' : 'forward'));
+    setActiveStage(3);
   };
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedCode(true);
-    setTimeout(() => setCopiedCode(false), 2000);
-  };
-
-  const curlSnippet = `curl -X POST https://payflow.internal/api/v1/payments \\
-  -H "Content-Type: application/json" \\
-  -H "Idempotency-Key: pay_req_89f02c91a4b" \\
-  -d '{
-    "orderId": "ord_990184",
-    "amountMinor": 99900,
-    "currency": "INR",
-    "simulatedOutcome": "SUCCESS"
-  }'`;
-
-  const sdkSnippet = `import { PayFlowClient } from '@payflow/node';
-
-const client = new PayFlowClient({ secretKey: process.env.PAYFLOW_SECRET });
-
-// Guaranteed zero float calculation (Paise integers)
-const payment = await client.payments.create({
-  orderId: 'ord_990184',
-  amountMinor: 99900, // ₹999.00
-  currency: 'INR',
-  idempotencyKey: 'idemp_key_' + crypto.randomUUID(),
-});
-
-console.log(payment.status); // 'SUCCEEDED'`;
-
-  const webhookSnippet = `// HMAC-SHA256 Constant-Time Signature Verification
-import crypto from 'crypto';
-
-function verifyPayflowWebhook(payload: string, headerSig: string, secret: string) {
-  const [tPart, v1Part] = headerSig.split(',');
-  const timestamp = tPart.split('=')[1];
-  const signature = v1Part.split('=')[1];
-
-  const expected = crypto
-    .createHmac('sha256', secret)
-    .update(\`\${timestamp}.\${payload}\`)
-    .digest('hex');
-
-  // Defense against timing attacks
-  return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
-}`;
 
   return (
     <div
-      className="min-h-screen bg-[#080a0f] text-neutral-300 font-mono relative overflow-hidden selection:bg-cyan-500/20 selection:text-cyan-300"
+      className="cf-root min-h-screen bg-black text-neutral-300 font-mono flex flex-col justify-between selection:bg-neutral-800 selection:text-white relative overflow-hidden"
       style={{ WebkitFontSmoothing: 'antialiased' }}
     >
-      {/* Background Subtle Gradient Grid */}
-      <div className="absolute inset-0 terminal-grid opacity-40 pointer-events-none" />
-      <div className="absolute top-0 right-1/4 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute top-1/3 left-10 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
+      <style>{SINGLE_PAGE_CSS}</style>
 
-      {/* Top Institutional Header */}
-      <header className="border-b border-neutral-800/60 sticky top-0 z-50 bg-[#080a0f]/90 backdrop-blur-md">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <LogoIcon className="w-6 h-6" />
+      {/* Subtle Terminal Grid Background */}
+      <div className="absolute inset-0 terminal-grid opacity-35 pointer-events-none" />
+
+      {/* Top Header */}
+      <header className="border-b border-neutral-900 sticky top-0 z-50 bg-black/90 backdrop-blur-md">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+          {/* Brand */}
+          <div className="flex items-center gap-2.5">
+            <LogoIcon className="w-5 h-5" />
             <span className="text-sm font-bold text-white tracking-wider font-mono">payflow</span>
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-neutral-400 font-mono">
-              v1.0 SANDBOX
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-neutral-950 border border-neutral-800 text-neutral-400 font-mono">
+              v1.0
             </span>
           </div>
 
+          {/* Header Actions */}
           <div className="flex items-center gap-3">
-            {/* Live Gateway Telemetry Beacon */}
-            <div className="hidden md:flex items-center gap-2 text-[11px] text-neutral-400 px-2.5 py-1 rounded bg-[#0c1017] border border-neutral-800/80">
+            <div className="hidden sm:flex items-center gap-2 text-[11px] text-neutral-500 px-2.5 py-1 rounded bg-neutral-950 border border-neutral-900">
               <span
                 className={`w-1.5 h-1.5 rounded-full ${
-                  backendOnline ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'
+                  backendOnline ? 'bg-white animate-pulse' : 'bg-neutral-600'
                 }`}
               />
-              <span className="text-neutral-500">GATEWAY:</span>
-              <span className={`font-semibold ${backendOnline ? 'text-emerald-400' : 'text-rose-400'}`}>
-                {backendOnline ? 'ONLINE' : 'OFFLINE'}
-              </span>
+              <span>GATEWAY: {backendOnline ? 'ONLINE' : 'STANDBY'}</span>
             </div>
 
-            {/* Quick Desk Navigation Links */}
             <button
               onClick={() => onEnterApp('ledger')}
-              className="hidden sm:inline-flex text-xs text-neutral-400 hover:text-neutral-200 px-3 py-1.5 border border-neutral-800 hover:border-neutral-700 rounded transition-colors cursor-pointer"
+              className="text-xs text-neutral-400 hover:text-white px-3 py-1.5 border border-neutral-850 hover:border-neutral-700 rounded transition-colors cursor-pointer"
             >
               general ledger
             </button>
 
             <button
               onClick={() => onEnterApp('checkout')}
-              className="text-xs font-semibold text-neutral-950 bg-neutral-100 hover:bg-white px-3.5 py-1.5 rounded flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer"
+              className="text-xs font-semibold text-black bg-white hover:bg-neutral-200 px-3.5 py-1.5 rounded flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <Terminal className="w-3.5 h-3.5" />
               <span>launch terminal</span>
@@ -178,547 +154,313 @@ function verifyPayflowWebhook(payload: string, headerSig: string, secret: string
         </div>
       </header>
 
-      {/* Main Container */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 relative z-10">
+      {/* Main Single-Screen Content */}
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 flex-1 flex flex-col justify-center py-6 sm:py-8 relative z-10 w-full space-y-8">
+        {/* Title & Core Value */}
+        <div className="text-center max-w-2xl mx-auto space-y-3">
+          <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-neutral-950 border border-neutral-800 text-[10px] text-neutral-400 uppercase tracking-widest">
+            <span className="w-1 h-1 rounded-full bg-white" />
+            <span>Deterministic Cash Flow Architecture</span>
+          </div>
+
+          <h1 className="text-2xl sm:text-4xl font-bold text-white tracking-tight leading-tight font-sans">
+            Money flows across systems. Without drift.
+          </h1>
+
+          <p className="text-xs text-neutral-400 leading-relaxed max-w-xl mx-auto font-mono">
+            Zero-float integer paise arithmetic, SHA-256 idempotency locks, and immutable
+            double-entry ledger settlement across multi-system architectures.
+          </p>
+        </div>
+
         {/* ========================================================
-            HERO SECTION: Headline + Real-Time Cash Flow Pipeline
+            THE SYSTEM-TO-SYSTEM CASH FLOW TOPOLOGY
         ======================================================== */}
-        <section className="pt-12 sm:pt-20 pb-16 border-b border-neutral-800/60">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-            {/* Left Column: Mission & Core Value */}
-            <div className="lg:col-span-6 space-y-6">
-              <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded bg-[#0d131f] border border-[#1b253b] text-[10px] text-cyan-400 uppercase tracking-widest">
-                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-                <span>Deterministic Cash Flow Engine</span>
-              </div>
-
-              <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight leading-tight font-sans">
-                Real-time cash flow orchestration &amp;{' '}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-400">
-                  double-entry ledger.
-                </span>
-              </h1>
-
-              <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed font-mono">
-                Engineered for fintech infrastructure with strict zero-float integer paise arithmetic,
-                replay-safe SHA-256 idempotency locks, pessimistic row-level refund concurrency, and
-                cryptographic HMAC-SHA256 webhooks.
-              </p>
-
-              {/* Action Buttons */}
-              <div className="flex flex-wrap gap-2.5 pt-1">
-                <button
-                  onClick={() => onEnterApp('checkout')}
-                  className="inline-flex items-center px-4 py-2 bg-emerald-400 text-slate-950 text-xs font-bold rounded hover:bg-emerald-300 transition-all shadow-sm cursor-pointer"
-                >
-                  <Terminal className="w-3.5 h-3.5 mr-1.5" />
-                  launch terminal
-                  <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
-                </button>
-                <button
-                  onClick={() => onEnterApp('ledger')}
-                  className="inline-flex items-center px-4 py-2 border border-neutral-800 text-xs font-medium rounded text-neutral-300 hover:text-white hover:border-neutral-700 bg-[#0a0a0c] transition-colors cursor-pointer"
-                >
-                  <BookOpen className="w-3.5 h-3.5 mr-1.5 text-cyan-400" />
-                  explore balanced ledger
-                </button>
-                <button
-                  onClick={() => onEnterApp('refunds')}
-                  className="inline-flex items-center px-4 py-2 border border-neutral-800 text-xs font-medium rounded text-neutral-400 hover:text-neutral-300 hover:border-neutral-700 transition-colors cursor-pointer"
-                >
-                  <RotateCcw className="w-3.5 h-3.5 mr-1.5 text-purple-400" />
-                  refund escrow
-                </button>
-              </div>
-
-              {/* Micro-telemetry Strip */}
-              <div className="pt-2 flex items-center gap-6 text-[11px] text-neutral-500 font-mono">
-                <div className="flex items-center gap-1.5">
-                  <Coins className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Integer Paise (0 Float)</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>∑ Dr === ∑ Cr Invariant</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Lock className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>ACID Row Lock</span>
-                </div>
-              </div>
+        <div className="border border-neutral-850 rounded-xl p-5 sm:p-7 bg-[#050505] shadow-2xl relative overflow-hidden">
+          {/* Canvas Sub-Header & Controls */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-neutral-900 gap-3">
+            <div className="flex items-center gap-2.5">
+              <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+              <span className="text-xs font-bold text-white tracking-wider uppercase">
+                Inter-System Cash Transfer Pipeline
+              </span>
+              <span className="text-[10px] text-neutral-500 font-mono hidden md:inline">
+                • ₹999.00 (99,900 paise packet)
+              </span>
             </div>
 
-            {/* Right Column: Interactive Live Cash Flow Animation Pipeline */}
-            <div className="lg:col-span-6">
-              <div className="border border-neutral-800/80 rounded-lg p-5 bg-[#0a0a0c] shadow-2xl relative overflow-hidden">
-                {/* Pipeline Header */}
-                <div className="flex items-center justify-between pb-3.5 border-b border-neutral-800/70 text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-                    <span className="font-semibold text-white tracking-wider">LIVE CASH FLOW PIPELINE</span>
-                  </div>
-                  <span className="text-[10px] text-neutral-500">PAISE CHANNEL • ₹999.00</span>
-                </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsStreaming(!isStreaming)}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-mono transition-all cursor-pointer ${
+                  isStreaming
+                    ? 'bg-neutral-900 text-white border border-neutral-700'
+                    : 'bg-black text-neutral-500 border border-neutral-850 hover:text-white'
+                }`}
+              >
+                {isStreaming ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+                <span>{isStreaming ? 'STREAMING' : 'PAUSED'}</span>
+              </button>
 
-                {/* Animated Pipeline Nodes Diagram */}
-                <div className="py-6 space-y-4 relative">
-                  {/* Node 1: Customer Source Vault */}
-                  <div className="flex items-center justify-between p-3 rounded border border-neutral-800 bg-[#0d121c]">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded bg-[#131b2c] border border-cyan-500/40 flex items-center justify-center text-cyan-300 text-xs font-bold">
-                        C1
-                      </div>
-                      <div>
-                        <div className="text-xs font-bold text-white">Buyer Vault (Order ord_9901)</div>
-                        <div className="text-[10px] text-neutral-500 font-mono">Debited Account • ₹999.00</div>
-                      </div>
+              <button
+                type="button"
+                onClick={toggleReverse}
+                className="px-2.5 py-1 rounded bg-black hover:bg-neutral-900 text-neutral-400 hover:text-white border border-neutral-800 text-[11px] font-mono transition-all cursor-pointer"
+              >
+                {direction === 'forward' ? 'Simulate Reversal ⟲' : 'Forward Flow ⟳'}
+              </button>
+            </div>
+          </div>
+
+          {/* System Nodes Mesh */}
+          <div className="py-6">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
+              {/* SYSTEM A: Client Storefront (Origin) */}
+              <div className="lg:col-span-3">
+                <div
+                  className={`p-4 rounded-lg border transition-all glow-box ${
+                    activeStage === 1
+                      ? 'border-white bg-[#0a0a0a] node-pulse text-white'
+                      : 'border-neutral-850 bg-black text-neutral-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <Smartphone className="w-3.5 h-3.5 text-neutral-400" />
+                      <span className="text-[10px] uppercase font-bold text-neutral-400">System A</span>
                     </div>
-                    <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                        flowStep >= 1 ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-800/40' : 'bg-neutral-800 text-neutral-400'
-                      }`}
-                    >
-                      {flowStep >= 1 ? 'AUTHORIZED' : 'READY'}
+                    <span className="text-[9px] px-1 rounded bg-neutral-900 border border-neutral-800 text-neutral-300">
+                      ORIGIN
                     </span>
                   </div>
 
-                  {/* Flow Stream SVG 1: Connecting Node 1 to Node 2 */}
-                  <div className="h-8 flex items-center justify-center relative">
-                    <svg className="w-8 h-full" viewBox="0 0 32 32">
-                      <line
-                        x1="16"
-                        y1="0"
-                        x2="16"
-                        y2="32"
-                        stroke={flowStep >= 1 ? '#06b6d4' : '#262626'}
-                        strokeWidth="2.5"
-                        className={flowStep >= 1 ? 'animate-flow' : ''}
-                      />
-                    </svg>
-                    {flowStep >= 1 && (
-                      <span className="absolute px-2 py-0.5 bg-[#080b10] border border-cyan-500/40 rounded text-[9px] text-cyan-300 font-mono animate-pulse">
-                        99,900 paise &darr;
-                      </span>
-                    )}
-                  </div>
+                  <div className="text-xs font-bold text-white">Client Storefront</div>
+                  <div className="text-[10px] text-neutral-500 mt-0.5">Order ord_9901 &bull; User Session</div>
 
-                  {/* Node 2: PayFlow Idempotency Gateway Guard */}
-                  <div
-                    className={`p-3.5 rounded border transition-all ${
-                      flowStep >= 2
-                        ? 'border-cyan-500/50 bg-[#0e1626]'
-                        : 'border-neutral-800 bg-[#0d121c]'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded bg-[#10192a] border border-cyan-500/50 flex items-center justify-center text-cyan-300">
-                          <Lock className="w-3.5 h-3.5" />
-                        </div>
-                        <div>
-                          <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                            <span>PayFlow Gateway Engine</span>
-                            {flowMode === 'idempotent' && (
-                              <span className="text-[9px] px-1 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                                CACHED HIT
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-[10px] text-neutral-400 font-mono truncate max-w-xs">
-                            Idempotency Key: <span className="text-cyan-400">req_9fa18c2...</span>
-                          </div>
-                        </div>
-                      </div>
-                      <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                          flowStep >= 2
-                            ? 'bg-cyan-950/60 text-cyan-400 border border-cyan-800/40'
-                            : 'bg-neutral-800 text-neutral-400'
-                        }`}
-                      >
-                        {flowStep >= 2 ? 'LOCKED & ROUTED' : 'AWAITING'}
-                      </span>
+                  <div className="mt-2.5 pt-2 border-t border-neutral-900 space-y-1 text-[10px]">
+                    <div className="flex justify-between">
+                      <span className="text-neutral-500">Authorized:</span>
+                      <span className="text-white font-bold tabular-nums">₹999.00</span>
                     </div>
-                  </div>
-
-                  {/* Flow Stream SVG 2: Splitting Node 2 into Node 3A and 3B */}
-                  <div className="h-8 flex items-center justify-center relative">
-                    <svg className="w-full h-full" viewBox="0 0 300 32">
-                      <path
-                        d="M 150 0 L 150 16 L 80 16 L 80 32"
-                        fill="none"
-                        stroke={flowStep >= 3 ? '#10b981' : '#262626'}
-                        strokeWidth="2"
-                        className={flowStep >= 3 ? 'animate-flow' : ''}
-                      />
-                      <path
-                        d="M 150 0 L 150 16 L 220 16 L 220 32"
-                        fill="none"
-                        stroke={flowStep >= 3 ? '#a855f7' : '#262626'}
-                        strokeWidth="2"
-                        className={flowStep >= 3 ? 'animate-flow' : ''}
-                      />
-                    </svg>
-                  </div>
-
-                  {/* Dual Balanced Settlement Nodes */}
-                  <div className="grid grid-cols-2 gap-3">
-                    {/* Node 3A: Merchant Escrow (Credit) */}
-                    <div
-                      className={`p-3 rounded border text-left transition-all ${
-                        flowStep >= 4
-                          ? 'border-emerald-500/50 bg-[#091b15]'
-                          : 'border-neutral-800 bg-[#0d121c]'
-                      }`}
-                    >
-                      <div className="text-[10px] text-neutral-400 uppercase font-mono">Credit (Cr)</div>
-                      <div className="text-xs font-bold text-white mt-0.5">Merchant Escrow</div>
-                      <div className="text-sm font-black text-emerald-400 font-mono mt-1 tabular-nums">
-                        +₹999.00
-                      </div>
-                      <div className="text-[9px] text-neutral-500 mt-0.5">Account #2010</div>
-                    </div>
-
-                    {/* Node 3B: Gateway Clearing Ledger (Debit) */}
-                    <div
-                      className={`p-3 rounded border text-left transition-all ${
-                        flowStep >= 4
-                          ? 'border-purple-500/50 bg-[#170e24]'
-                          : 'border-neutral-800 bg-[#0d121c]'
-                      }`}
-                    >
-                      <div className="text-[10px] text-neutral-400 uppercase font-mono">Debit (Dr)</div>
-                      <div className="text-xs font-bold text-white mt-0.5">Gateway Clearing</div>
-                      <div className="text-sm font-black text-purple-400 font-mono mt-1 tabular-nums">
-                        -₹999.00
-                      </div>
-                      <div className="text-[9px] text-neutral-500 mt-0.5">Account #1010</div>
+                    <div className="flex justify-between">
+                      <span className="text-neutral-500">Unit:</span>
+                      <span className="text-neutral-300 font-mono">99,900 paise</span>
                     </div>
                   </div>
                 </div>
+              </div>
 
-                {/* Interactive Simulation Controls */}
-                <div className="pt-3 border-t border-neutral-800/70 space-y-2.5">
-                  <div className="text-[10px] uppercase font-bold text-neutral-500 tracking-wider">
-                    Interactive Stream Harness:
+              {/* CONDUIT 1: Animated Pipe with Cash Note */}
+              <div className="lg:col-span-2 hidden lg:flex flex-col items-center justify-center relative py-2">
+                <svg className="w-full h-8 overflow-visible" viewBox="0 0 140 32">
+                  <line
+                    x1="0"
+                    y1="16"
+                    x2="140"
+                    y2="16"
+                    stroke="#ffffff"
+                    strokeWidth="2"
+                    strokeOpacity={activeStage >= 1 ? 0.75 : 0.2}
+                    className={direction === 'reverse' ? 'animate-pipe-reverse' : 'animate-pipe-flow'}
+                  />
+                  {/* Traveling Cash Packet */}
+                  <circle r="3.5" fill="#ffffff">
+                    <animateMotion
+                      dur="1.4s"
+                      repeatCount="indefinite"
+                      path={direction === 'reverse' ? 'M 140 16 L 0 16' : 'M 0 16 L 140 16'}
+                    />
+                  </circle>
+                </svg>
+
+                <div className="absolute px-2 py-0.5 rounded bg-black border border-neutral-700 text-[9px] text-neutral-300 font-bold shadow-sm flex items-center gap-1">
+                  <span>₹999</span>
+                  <span className="text-[8px] text-neutral-500">&rarr;</span>
+                </div>
+              </div>
+
+              {/* SYSTEM B: PayFlow Gateway Core (Router) */}
+              <div className="lg:col-span-3">
+                <div
+                  className={`p-4 rounded-lg border transition-all glow-box ${
+                    activeStage === 2
+                      ? 'border-white bg-[#0a0a0a] node-pulse text-white'
+                      : 'border-neutral-850 bg-black text-neutral-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <Server className="w-3.5 h-3.5 text-neutral-400" />
+                      <span className="text-[10px] uppercase font-bold text-neutral-400">System B</span>
+                    </div>
+                    <span className="text-[9px] px-1 rounded bg-neutral-900 border border-neutral-800 text-neutral-300">
+                      GATEWAY
+                    </span>
                   </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => triggerFlow('charge')}
-                      className="px-2.5 py-1.5 rounded bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-[11px] font-semibold transition-colors cursor-pointer text-center"
-                    >
-                      Authorize ₹999
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => triggerFlow('refund')}
-                      className="px-2.5 py-1.5 rounded bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 text-purple-300 text-[11px] font-semibold transition-colors cursor-pointer text-center"
-                    >
-                      Simulate Reversal
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => triggerFlow('idempotent')}
-                      className="px-2.5 py-1.5 rounded bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 text-[11px] font-semibold transition-colors cursor-pointer text-center"
-                    >
-                      Replay Hash
-                    </button>
+
+                  <div className="text-xs font-bold text-white">PayFlow Core Engine</div>
+                  <div className="text-[10px] text-neutral-500 mt-0.5">Idempotency &bull; State Machine</div>
+
+                  <div className="mt-2.5 pt-2 border-t border-neutral-900 space-y-1 text-[10px]">
+                    <div className="flex justify-between">
+                      <span className="text-neutral-500">SHA-256 Key:</span>
+                      <span className="text-neutral-300 font-mono truncate max-w-[90px]">req_89f02c...</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-neutral-500">State:</span>
+                      <span className="text-white font-bold">SUCCEEDED</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* CONDUIT 2: Dual Split Pipe */}
+              <div className="lg:col-span-1 hidden lg:flex flex-col items-center justify-center relative py-2">
+                <svg className="w-full h-28 overflow-visible" viewBox="0 0 60 112">
+                  {/* Top Branch */}
+                  <path
+                    d="M 0 56 L 30 56 L 30 18 L 60 18"
+                    fill="none"
+                    stroke="#ffffff"
+                    strokeWidth="1.75"
+                    strokeOpacity={activeStage >= 3 ? 0.75 : 0.2}
+                    className="animate-pipe-flow"
+                  />
+                  {/* Bottom Branch */}
+                  <path
+                    d="M 0 56 L 30 56 L 30 94 L 60 94"
+                    fill="none"
+                    stroke="#ffffff"
+                    strokeWidth="1.75"
+                    strokeOpacity={activeStage >= 3 ? 0.75 : 0.2}
+                    className="animate-pipe-flow"
+                  />
+                  <circle r="3" fill="#ffffff">
+                    <animateMotion dur="1.2s" repeatCount="indefinite" path="M 0 56 L 30 56 L 30 18 L 60 18" />
+                  </circle>
+                  <circle r="3" fill="#ffffff">
+                    <animateMotion dur="1.2s" repeatCount="indefinite" path="M 0 56 L 30 56 L 30 94 L 60 94" />
+                  </circle>
+                </svg>
+              </div>
+
+              {/* SYSTEMS C & D: Double-Entry Destinations */}
+              <div className="lg:col-span-3 space-y-2.5">
+                {/* System C: PostgreSQL Ledger (Debit) */}
+                <div
+                  className={`p-3 rounded-lg border transition-all glow-box ${
+                    activeStage === 3
+                      ? 'border-white bg-[#0a0a0a] node-pulse'
+                      : 'border-neutral-850 bg-black'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-1.5">
+                      <Database className="w-3 h-3 text-neutral-400" />
+                      <span className="text-[10px] font-bold text-white">System C: Postgres Ledger</span>
+                    </div>
+                    <span className="text-[8px] font-mono text-neutral-300 bg-neutral-900 border border-neutral-800 px-1 rounded">
+                      DEBIT (DR)
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-[10px]">
+                    <span className="text-neutral-500">Asset Clearing:</span>
+                    <span className="font-bold text-white tabular-nums">+₹999.00</span>
+                  </div>
+                </div>
+
+                {/* System D: Merchant Settlement Escrow (Credit) */}
+                <div
+                  className={`p-3 rounded-lg border transition-all glow-box ${
+                    activeStage === 4
+                      ? 'border-white bg-[#0a0a0a] node-pulse'
+                      : 'border-neutral-850 bg-black'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-1.5">
+                      <Building2 className="w-3 h-3 text-neutral-400" />
+                      <span className="text-[10px] font-bold text-white">System D: Merchant Escrow</span>
+                    </div>
+                    <span className="text-[8px] font-mono text-neutral-300 bg-neutral-900 border border-neutral-800 px-1 rounded">
+                      CREDIT (CR)
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-[10px]">
+                    <span className="text-neutral-500">Settled Reserve:</span>
+                    <span className="font-bold text-white tabular-nums">+₹999.00</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </section>
 
-        {/* ========================================================
-            REAL-TIME INVARIANT TICKER STRIP
-        ======================================================== */}
-        <section className="py-10 border-b border-neutral-800/60">
-          <div className="p-4 rounded-lg bg-[#0a0a0c] border border-neutral-800 flex flex-col md:flex-row items-center justify-between gap-4">
+          {/* Telemetry Footnote */}
+          <div className="pt-3 border-t border-neutral-900 flex flex-col sm:flex-row items-center justify-between text-[10px] text-neutral-500 gap-2">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded bg-emerald-950/60 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
-                <ShieldCheck className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="text-xs font-bold text-white flex items-center gap-2">
-                  <span>DOUBLE-ENTRY ACCOUNTING INVARIANT</span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-950 text-emerald-400 border border-emerald-800/40">
-                    VERIFIED
-                  </span>
-                </div>
-                <div className="text-[11px] text-neutral-500 mt-0.5">
-                  Mathematical proof: Total Debits &minus; Total Credits = ₹0.00 (Zero Drift Guarantee)
-                </div>
-              </div>
+              <span>Invariant: <strong className="text-white">∑ Dr ≡ ∑ Cr</strong></span>
+              <span>&bull;</span>
+              <span>Variance: <strong className="text-white">₹{stats.variance}</strong></span>
+              <span>&bull;</span>
+              <span>Lock: <strong className="text-neutral-300">FOR UPDATE (ACID)</strong></span>
             </div>
-
-            <div className="flex items-center gap-6 font-mono text-xs">
-              <div className="text-right">
-                <span className="text-[10px] text-neutral-500 block uppercase">Network Txs</span>
-                <span className="font-bold text-white tabular-nums">
-                  {liveCounter.transactions.toLocaleString()}
-                </span>
-              </div>
-              <div className="text-right">
-                <span className="text-[10px] text-neutral-500 block uppercase">Settled Volume</span>
-                <span className="font-bold text-emerald-400 tabular-nums">
-                  ₹{(liveCounter.volumeMinor / 100).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-                </span>
-              </div>
-              <button
-                onClick={() => onEnterApp('ledger')}
-                className="px-3 py-1.5 bg-[#141d2d] hover:bg-[#1a263c] border border-cyan-500/30 text-cyan-300 rounded text-xs transition-colors cursor-pointer"
-              >
-                Inspect Ledger &rarr;
-              </button>
+            <div className="flex items-center gap-3">
+              <span>Settled Volume: <strong className="text-white">₹{stats.settledRupees.toLocaleString('en-IN')}</strong></span>
+              <span>&bull;</span>
+              <span>Transactions: <strong className="text-white">{stats.transactions.toLocaleString()}</strong></span>
             </div>
           </div>
-        </section>
+        </div>
 
-        {/* ========================================================
-            FOUR PILLARS OF PAYFLOW INFRASTRUCTURE
-        ======================================================== */}
-        <section className="py-16 border-b border-neutral-800/60">
-          <div className="mb-8">
-            <p className="text-[10px] text-neutral-500 uppercase tracking-widest mb-1.5">
-              Financial Engineering Pillars
+        {/* 3 Core Architecture Points (Compact, 1 Row) */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="p-3.5 rounded-lg border border-neutral-900 bg-[#050505] space-y-1">
+            <div className="flex items-center gap-2 text-xs font-bold text-white">
+              <Coins className="w-3.5 h-3.5 text-neutral-400" />
+              <span>Strict Integer Paise</span>
+            </div>
+            <p className="text-[11px] text-neutral-500 leading-relaxed font-mono">
+              Zero floating-point numbers. All currency operations are calculated in integer paise.
             </p>
-            <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight font-sans">
-              Precision architecture for zero-loss payment systems
-            </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Pillar 1: Integer Arithmetic vs Floating Point */}
-            <div className="p-6 rounded-lg bg-[#0a0a0c] border border-neutral-800/80 glow-card space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <Coins className="w-5 h-5 text-amber-400" />
-                  <h3 className="text-sm font-bold text-white">Strict Integer Paise Arithmetic</h3>
-                </div>
-                <span className="text-[10px] text-amber-400 bg-amber-950/60 border border-amber-800/40 px-2 py-0.5 rounded">
-                  ZERO FLOAT
-                </span>
-              </div>
-              <p className="text-xs text-neutral-400 leading-relaxed font-mono">
-                Floating-point math causes rounding drift in financial databases. PayFlow enforces integer paise
-                across orders, payments, fees, and refunds.
-              </p>
-              <div className="p-3 rounded bg-[#080b10] border border-neutral-800 space-y-1.5 text-xs font-mono">
-                <div className="flex justify-between text-rose-400">
-                  <span>Float JS: 0.1 + 0.2</span>
-                  <span>0.30000000000000004 ✕</span>
-                </div>
-                <div className="flex justify-between text-emerald-400 font-bold border-t border-neutral-800/80 pt-1.5">
-                  <span>PayFlow Paise: 10 + 20</span>
-                  <span>30 paise (₹0.30) ✓</span>
-                </div>
-              </div>
+          <div className="p-3.5 rounded-lg border border-neutral-900 bg-[#050505] space-y-1">
+            <div className="flex items-center gap-2 text-xs font-bold text-white">
+              <Lock className="w-3.5 h-3.5 text-neutral-400" />
+              <span>SHA-256 Idempotency</span>
             </div>
-
-            {/* Pillar 2: Pessimistic Row-Level Refund Locks */}
-            <div className="p-6 rounded-lg bg-[#0a0a0c] border border-neutral-800/80 glow-card space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <RotateCcw className="w-5 h-5 text-purple-400" />
-                  <h3 className="text-sm font-bold text-white">Pessimistic Concurrency Escrow</h3>
-                </div>
-                <span className="text-[10px] text-purple-400 bg-purple-950/60 border border-purple-800/40 px-2 py-0.5 rounded">
-                  FOR UPDATE
-                </span>
-              </div>
-              <p className="text-xs text-neutral-400 leading-relaxed font-mono">
-                Simultaneous refund requests trigger database row-level locking. Eliminates race conditions
-                where overlapping requests exceed the captured transaction amount.
-              </p>
-              <div className="p-3 rounded bg-[#080b10] border border-neutral-800 space-y-1 text-xs font-mono text-neutral-400">
-                <div className="text-purple-300 font-semibold">PostgreSQL ACID Transaction:</div>
-                <code className="text-[11px] text-neutral-300 block truncate">
-                  SELECT * FROM payments WHERE id = $1 FOR UPDATE;
-                </code>
-              </div>
-            </div>
-
-            {/* Pillar 3: Replay-Safe Idempotency Key Shield */}
-            <div className="p-6 rounded-lg bg-[#0a0a0c] border border-neutral-800/80 glow-card space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <Lock className="w-5 h-5 text-cyan-400" />
-                  <h3 className="text-sm font-bold text-white">SHA-256 Idempotency Shield</h3>
-                </div>
-                <span className="text-[10px] text-cyan-400 bg-cyan-950/60 border border-cyan-800/40 px-2 py-0.5 rounded">
-                  REPLAY SAFE
-                </span>
-              </div>
-              <p className="text-xs text-neutral-400 leading-relaxed font-mono">
-                Network timeouts often cause client retries. Every request is locked by an Idempotency-Key
-                and payload hash. Replays immediately receive the cached response without double charges.
-              </p>
-              <div className="p-3 rounded bg-[#080b10] border border-neutral-800 flex items-center justify-between text-xs font-mono">
-                <span className="text-neutral-400">Conflict Detection:</span>
-                <span className="text-cyan-300 font-bold">409 Mismatched Payload Block</span>
-              </div>
-            </div>
-
-            {/* Pillar 4: Cryptographic Webhook Outbox */}
-            <div className="p-6 rounded-lg bg-[#0a0a0c] border border-neutral-800/80 glow-card space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <Cpu className="w-5 h-5 text-emerald-400" />
-                  <h3 className="text-sm font-bold text-white">Cryptographic Outbox Matrix</h3>
-                </div>
-                <span className="text-[10px] text-emerald-400 bg-emerald-950/60 border border-emerald-800/40 px-2 py-0.5 rounded">
-                  HMAC-SHA256
-                </span>
-              </div>
-              <p className="text-xs text-neutral-400 leading-relaxed font-mono">
-                Transactional outbox pattern guarantees delivery. Events are signed with SHA-256 HMAC and
-                verified via constant-time byte comparisons to defeat timing attacks.
-              </p>
-              <div className="p-3 rounded bg-[#080b10] border border-neutral-800 flex items-center justify-between text-xs font-mono">
-                <span className="text-neutral-400">Header:</span>
-                <span className="text-emerald-300 font-semibold truncate max-w-[200px]">
-                  X-PayFlow-Signature: t=...,v1=...
-                </span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ========================================================
-            INTERACTIVE DEVELOPER CONSOLE & SDK MATRIX
-        ======================================================== */}
-        <section className="py-16 border-b border-neutral-800/60">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-            <div>
-              <p className="text-[10px] text-neutral-500 uppercase tracking-widest mb-1">
-                Developer Integration Harness
-              </p>
-              <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight font-sans">
-                Native API requests &amp; cryptographic verification
-              </h2>
-            </div>
-
-            {/* Code Tabs */}
-            <div className="flex items-center gap-1.5 p-1 rounded bg-[#0a0a0c] border border-neutral-800 text-xs">
-              <button
-                type="button"
-                onClick={() => setActiveCodeTab('curl')}
-                className={`px-3 py-1 rounded transition-colors cursor-pointer ${
-                  activeCodeTab === 'curl' ? 'bg-[#141d2d] text-cyan-300 font-bold' : 'text-neutral-400 hover:text-white'
-                }`}
-              >
-                cURL
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveCodeTab('sdk')}
-                className={`px-3 py-1 rounded transition-colors cursor-pointer ${
-                  activeCodeTab === 'sdk' ? 'bg-[#141d2d] text-cyan-300 font-bold' : 'text-neutral-400 hover:text-white'
-                }`}
-              >
-                Node.js SDK
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveCodeTab('webhook')}
-                className={`px-3 py-1 rounded transition-colors cursor-pointer ${
-                  activeCodeTab === 'webhook' ? 'bg-[#141d2d] text-cyan-300 font-bold' : 'text-neutral-400 hover:text-white'
-                }`}
-              >
-                HMAC Verify
-              </button>
-            </div>
+            <p className="text-[11px] text-neutral-500 leading-relaxed font-mono">
+              Atomic request locks ensure network retries never double-charge customer accounts.
+            </p>
           </div>
 
-          {/* Code Viewer Panel */}
-          <div className="rounded-lg border border-neutral-800 bg-[#0a0a0c] overflow-hidden shadow-2xl relative">
-            <div className="px-4 py-2.5 border-b border-neutral-800/80 bg-[#07090e] flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs font-mono text-neutral-400">
-                <Code2 className="w-4 h-4 text-cyan-400" />
-                <span>
-                  {activeCodeTab === 'curl'
-                    ? 'POST /api/v1/payments'
-                    : activeCodeTab === 'sdk'
-                    ? 'payments.service.ts'
-                    : 'webhook.crypto.ts'}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() =>
-                  copyToClipboard(
-                    activeCodeTab === 'curl'
-                      ? curlSnippet
-                      : activeCodeTab === 'sdk'
-                      ? sdkSnippet
-                      : webhookSnippet
-                  )
-                }
-                className="flex items-center gap-1.5 text-xs text-neutral-400 hover:text-white px-2 py-1 rounded bg-[#0d121c] border border-neutral-800 transition-colors cursor-pointer"
-              >
-                {copiedCode ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copiedCode ? 'Copied' : 'Copy'}</span>
-              </button>
+          <div className="p-3.5 rounded-lg border border-neutral-900 bg-[#050505] space-y-1">
+            <div className="flex items-center gap-2 text-xs font-bold text-white">
+              <BookOpen className="w-3.5 h-3.5 text-neutral-400" />
+              <span>Double-Entry Balance</span>
             </div>
-
-            <pre className="p-5 text-xs text-neutral-300 font-mono overflow-x-auto leading-relaxed bg-[#080b10]">
-              <code>
-                {activeCodeTab === 'curl' && curlSnippet}
-                {activeCodeTab === 'sdk' && sdkSnippet}
-                {activeCodeTab === 'webhook' && webhookSnippet}
-              </code>
-            </pre>
+            <p className="text-[11px] text-neutral-500 leading-relaxed font-mono">
+              Every captured payment and refund balance is posted transactionally into PostgreSQL.
+            </p>
           </div>
-        </section>
-
-        {/* ========================================================
-            ENTERPRISE TRANSPARENCY & RUNTIME AUDIT
-        ======================================================== */}
-        <section className="py-16">
-          <div className="border border-neutral-800 rounded-lg p-6 sm:p-8 bg-[#0a0a0c]">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Zap className="w-4 h-4 text-cyan-400" />
-                  <h3 className="text-sm font-bold text-white uppercase tracking-wider">
-                    Ready to simulate transactions live?
-                  </h3>
-                </div>
-                <p className="text-xs text-neutral-400 max-w-2xl leading-relaxed font-mono">
-                  Access the full interactive PayFlow terminal desk. Test multi-outcome payment authorizations,
-                  review balanced double-entry ledger transactions, execute partial row-locked refunds, and
-                  inspect cryptographically signed webhook dispatches.
-                </p>
-              </div>
-
-              <button
-                onClick={() => onEnterApp('checkout')}
-                className="shrink-0 inline-flex items-center px-5 py-2.5 bg-neutral-100 hover:bg-white text-neutral-950 text-xs font-bold rounded transition-colors shadow-sm cursor-pointer"
-              >
-                <span>launch terminal desk</span>
-                <ArrowRight className="w-3.5 h-3.5 ml-2" />
-              </button>
-            </div>
-          </div>
-        </section>
+        </div>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-neutral-800/60 py-6 bg-[#06080c]">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-[10px] text-neutral-600 font-mono">
+      {/* Minimal Footer */}
+      <footer className="border-t border-neutral-900 py-3.5 bg-black">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-[10px] text-neutral-600 font-mono">
           <div className="flex items-center gap-2">
             <span className="text-neutral-400 font-bold">payflow</span>
             <span>&copy; 2026 Core Gateway Architecture</span>
           </div>
-          <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-4">
             <span>engine: node.js / express</span>
             <span>storage: postgresql / prisma</span>
             <span>tests: 68 passing</span>
             <button
               onClick={() => onEnterApp('checkout')}
-              className="text-cyan-400 hover:text-cyan-300 underline cursor-pointer"
+              className="text-white hover:underline cursor-pointer"
             >
               enter terminal &rarr;
             </button>

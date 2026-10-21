@@ -41,30 +41,30 @@ export const Badge: React.FC<GenericBadgeProps> = ({
   };
 
   const variantStyles = {
-    neutral: 'bg-[#141b27] text-slate-300 border border-[#1e293b]',
-    gain: 'bg-[#062419] text-emerald-400 border border-[#0d5c3a]',
-    loss: 'bg-[#2a0e14] text-rose-400 border border-[#6b1d28]',
-    warn: 'bg-[#291a03] text-amber-400 border border-[#6e4606]',
-    info: 'bg-[#091b2e] text-sky-400 border border-[#144368]',
-    live: 'bg-[#052e16] text-emerald-400 border border-[#10b981]/40 font-mono font-bold',
-    simulated: 'bg-[#291a03] text-amber-400 border border-[#f59e0b]/40 font-mono font-bold',
-    historical: 'bg-[#0f172a] text-slate-300 border border-[#334155] font-mono',
+    neutral: 'bg-black text-neutral-300 border border-neutral-850',
+    gain: 'bg-neutral-950 text-white border border-neutral-700',
+    loss: 'bg-neutral-950 text-neutral-400 border border-neutral-800',
+    warn: 'bg-neutral-950 text-neutral-300 border border-neutral-800',
+    info: 'bg-neutral-950 text-neutral-200 border border-neutral-800',
+    live: 'bg-neutral-950 text-white border border-neutral-700 font-mono font-bold',
+    simulated: 'bg-neutral-950 text-neutral-400 border border-neutral-800 font-mono font-bold',
+    historical: 'bg-black text-neutral-500 border border-neutral-850 font-mono',
   };
 
   const dotColors = {
-    neutral: 'bg-slate-400',
-    gain: 'bg-emerald-400',
-    loss: 'bg-rose-400',
-    warn: 'bg-amber-400',
-    info: 'bg-sky-400',
-    live: 'bg-emerald-400 animate-pulse',
-    simulated: 'bg-amber-400',
-    historical: 'bg-slate-400',
+    neutral: 'bg-neutral-500',
+    gain: 'bg-white',
+    loss: 'bg-neutral-500',
+    warn: 'bg-neutral-400',
+    info: 'bg-neutral-300',
+    live: 'bg-white animate-pulse',
+    simulated: 'bg-neutral-500',
+    historical: 'bg-neutral-600',
   };
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-sm uppercase tracking-wide font-mono ${sizeStyles[size]} ${variantStyles[variant]} ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded uppercase tracking-wide font-mono ${sizeStyles[size]} ${variantStyles[variant]} ${className}`}
     >
       {dot && <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotColors[variant]}`} />}
       {children}
@@ -81,7 +81,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'sm' })
   const normalized = status.toUpperCase();
   const isSm = size === 'sm';
 
-  const baseClasses = `inline-flex items-center space-x-1.5 font-mono font-bold rounded-sm border uppercase tracking-wider ${
+  const baseClasses = `inline-flex items-center space-x-1.5 font-mono font-bold rounded border uppercase tracking-wider ${
     isSm ? 'px-2 py-0.5 text-[11px]' : 'px-2.5 py-1 text-xs'
   }`;
 
@@ -90,7 +90,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'sm' })
     case 'COMPLETED':
     case 'DELIVERED':
       return (
-        <span className={`${baseClasses} bg-[#062419] text-emerald-400 border-[#0d5c3a]`}>
+        <span className={`${baseClasses} bg-neutral-950 text-white border-neutral-700`}>
           <CheckCircle2 className={isSm ? 'w-3 h-3' : 'w-3.5 h-3.5'} />
           <span>{normalized}</span>
         </span>
@@ -98,7 +98,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'sm' })
 
     case 'FAILED':
       return (
-        <span className={`${baseClasses} bg-[#2a0e14] text-rose-400 border-[#6b1d28]`}>
+        <span className={`${baseClasses} bg-black text-neutral-400 border-neutral-800`}>
           <XCircle className={isSm ? 'w-3 h-3' : 'w-3.5 h-3.5'} />
           <span>{normalized}</span>
         </span>
@@ -107,7 +107,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'sm' })
     case 'PROCESSING':
     case 'PENDING':
       return (
-        <span className={`${baseClasses} bg-[#091b2e] text-sky-400 border-[#144368]`}>
+        <span className={`${baseClasses} bg-neutral-950 text-neutral-300 border-neutral-800`}>
           <Loader2 className={`${isSm ? 'w-3 h-3' : 'w-3.5 h-3.5'} animate-spin`} />
           <span>{normalized}</span>
         </span>
@@ -115,7 +115,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'sm' })
 
     case 'UNCERTAIN':
       return (
-        <span className={`${baseClasses} bg-[#291a03] text-amber-300 border-[#6e4606] animate-pulse`}>
+        <span className={`${baseClasses} bg-black text-white border-neutral-700 animate-pulse`}>
           <AlertTriangle className={isSm ? 'w-3 h-3' : 'w-3.5 h-3.5'} />
           <span>{normalized}</span>
         </span>
@@ -123,7 +123,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'sm' })
 
     case 'CREATED':
       return (
-        <span className={`${baseClasses} bg-[#141b27] text-slate-300 border-[#1e293b]`}>
+        <span className={`${baseClasses} bg-black text-neutral-400 border-neutral-850`}>
           <Clock className={isSm ? 'w-3 h-3' : 'w-3.5 h-3.5'} />
           <span>{normalized}</span>
         </span>
@@ -131,7 +131,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'sm' })
 
     case 'DEBIT':
       return (
-        <span className={`${baseClasses} bg-[#091b2e] text-sky-400 border-[#144368]`}>
+        <span className={`${baseClasses} bg-neutral-950 text-neutral-300 border-neutral-800`}>
           <ArrowDownLeft className={isSm ? 'w-3 h-3' : 'w-3.5 h-3.5'} />
           <span>DEBIT</span>
         </span>
@@ -139,7 +139,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'sm' })
 
     case 'CREDIT':
       return (
-        <span className={`${baseClasses} bg-[#062419] text-emerald-400 border-[#0d5c3a]`}>
+        <span className={`${baseClasses} bg-neutral-950 text-white border-neutral-700`}>
           <ArrowUpRight className={isSm ? 'w-3 h-3' : 'w-3.5 h-3.5'} />
           <span>CREDIT</span>
         </span>
@@ -147,7 +147,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'sm' })
 
     default:
       return (
-        <span className={`${baseClasses} bg-[#101520] text-slate-300 border-[#182030]`}>
+        <span className={`${baseClasses} bg-black text-neutral-400 border-neutral-850`}>
           <span>{status}</span>
         </span>
       );

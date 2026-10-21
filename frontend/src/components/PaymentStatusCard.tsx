@@ -153,45 +153,22 @@ export const PaymentStatusCard: React.FC<PaymentStatusCardProps> = ({
   const isUncertain = payment.status === 'UNCERTAIN';
 
   return (
-    <div className="bg-[#0d131f] rounded-sm p-6 sm:p-8 border border-[#1b253b] shadow-terminal relative overflow-hidden space-y-6 font-mono">
-      {/* Background ambient glow */}
-      <div
-        className={`absolute -top-24 -right-24 w-72 h-72 rounded-full blur-3xl pointer-events-none ${
-          isSuccess
-            ? 'bg-emerald-500/10'
-            : isFailed
-            ? 'bg-rose-500/10'
-            : isUncertain
-            ? 'bg-amber-500/10'
-            : 'bg-cyan-500/10'
-        }`}
-      />
-
+    <div className="bg-[#050505] rounded-sm p-6 sm:p-8 border border-neutral-850 space-y-6 font-mono">
       {/* Header Status & Amount */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-[#182030] gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-neutral-900 gap-4">
         <div className="flex items-center space-x-4">
-          <div
-            className={`w-13 h-13 rounded-sm flex items-center justify-center border ${
-              isSuccess
-                ? 'bg-emerald-950/40 text-emerald-400 border-emerald-500/30'
-                : isFailed
-                ? 'bg-rose-950/40 text-rose-400 border-rose-500/30'
-                : isUncertain
-                ? 'bg-amber-950/40 text-amber-400 border-amber-500/30'
-                : 'bg-cyan-950/40 text-cyan-400 border-cyan-500/30'
-            }`}
-          >
-            {isSuccess && <CheckCircle2 className="w-7 h-7" />}
-            {isFailed && <XCircle className="w-7 h-7" />}
-            {isUncertain && <HelpCircle className="w-7 h-7 text-amber-400" />}
-            {!isSuccess && !isFailed && !isUncertain && <Clock className="w-7 h-7 animate-spin" />}
+          <div className="w-12 h-12 rounded-sm flex items-center justify-center border border-neutral-800 bg-neutral-900 text-white shrink-0">
+            {isSuccess && <CheckCircle2 className="w-6 h-6 text-white" />}
+            {isFailed && <XCircle className="w-6 h-6 text-white" />}
+            {isUncertain && <HelpCircle className="w-6 h-6 text-neutral-400" />}
+            {!isSuccess && !isFailed && !isUncertain && <Clock className="w-6 h-6 animate-spin text-white" />}
           </div>
           <div>
             <div className="flex items-center space-x-2">
               <StatusBadge status={payment.status} size="md" />
-              <span className="text-[11px] text-slate-500 font-mono tracking-wider">GATEWAY: {payment.provider}</span>
+              <span className="text-[11px] text-neutral-500 font-mono tracking-wider">GATEWAY: {payment.provider}</span>
             </div>
-            <h3 className="text-lg sm:text-xl font-bold text-slate-100 mt-1 font-sans tracking-tight">
+            <h3 className="text-lg sm:text-xl font-bold text-white mt-1 font-sans tracking-tight">
               {isSuccess && 'Payment Successfully Captured'}
               {isFailed && 'Payment Declined by Provider'}
               {isUncertain && 'Provider Timeout — Status Uncertain'}
@@ -201,11 +178,11 @@ export const PaymentStatusCard: React.FC<PaymentStatusCardProps> = ({
         </div>
 
         <div className="text-left sm:text-right">
-          <span className="text-[11px] text-slate-500 uppercase tracking-wider block">Gross Captured</span>
-          <span className="text-2xl sm:text-3xl font-black text-slate-100 font-mono tabular-nums">
+          <span className="text-[11px] text-neutral-500 uppercase tracking-wider block">Gross Captured</span>
+          <span className="text-2xl sm:text-3xl font-black text-white font-mono tabular-nums">
             {formatINR(payment.amountMinor)}
           </span>
-          <span className="text-[10px] text-slate-500 block uppercase tracking-wider font-mono">
+          <span className="text-[10px] text-neutral-500 block uppercase tracking-wider font-mono">
             {payment.amountMinor} minor units • {payment.currency}
           </span>
         </div>
@@ -213,13 +190,13 @@ export const PaymentStatusCard: React.FC<PaymentStatusCardProps> = ({
 
       {/* Cross Navigation Action Pills */}
       <div className="flex flex-wrap items-center gap-2 pt-1 pb-1">
-        <span className="text-[11px] text-slate-500 uppercase tracking-wider mr-1">Inspect In:</span>
+        <span className="text-[11px] text-neutral-500 uppercase tracking-wider mr-1">Inspect In:</span>
         {onViewLedger && isSuccess && (
           <button
             onClick={() => onViewLedger(payment.id)}
-            className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-[#111724] hover:bg-[#151e2f] text-cyan-300 border border-cyan-500/30 rounded-sm text-xs font-mono transition-colors cursor-pointer"
+            className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-black hover:bg-neutral-900 text-neutral-300 border border-neutral-800 rounded-sm text-xs font-mono transition-colors cursor-pointer"
           >
-            <BookOpen className="w-3.5 h-3.5 text-cyan-400" />
+            <BookOpen className="w-3.5 h-3.5 text-white" />
             <span>Double-Entry Ledger</span>
           </button>
         )}
@@ -227,9 +204,9 @@ export const PaymentStatusCard: React.FC<PaymentStatusCardProps> = ({
         {onViewRefunds && isSuccess && (
           <button
             onClick={() => onViewRefunds(payment.id)}
-            className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-[#111724] hover:bg-[#151e2f] text-purple-300 border border-purple-500/30 rounded-sm text-xs font-mono transition-colors cursor-pointer"
+            className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-black hover:bg-neutral-900 text-neutral-300 border border-neutral-800 rounded-sm text-xs font-mono transition-colors cursor-pointer"
           >
-            <RotateCcw className="w-3.5 h-3.5 text-purple-400" />
+            <RotateCcw className="w-3.5 h-3.5 text-white" />
             <span>Refunds Desk</span>
           </button>
         )}
@@ -237,9 +214,9 @@ export const PaymentStatusCard: React.FC<PaymentStatusCardProps> = ({
         {onViewWebhooks && (
           <button
             onClick={onViewWebhooks}
-            className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-[#111724] hover:bg-[#151e2f] text-slate-300 border border-[#182030] rounded-sm text-xs font-mono transition-colors cursor-pointer"
+            className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-black hover:bg-neutral-900 text-neutral-300 border border-neutral-800 rounded-sm text-xs font-mono transition-colors cursor-pointer"
           >
-            <Webhook className="w-3.5 h-3.5 text-cyan-400" />
+            <Webhook className="w-3.5 h-3.5 text-neutral-400" />
             <span>Webhook Outbox</span>
           </button>
         )}
@@ -247,9 +224,9 @@ export const PaymentStatusCard: React.FC<PaymentStatusCardProps> = ({
         {onViewTransactions && (
           <button
             onClick={onViewTransactions}
-            className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-[#111724] hover:bg-[#151e2f] text-slate-300 border border-[#182030] rounded-sm text-xs font-mono transition-colors cursor-pointer"
+            className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-black hover:bg-neutral-900 text-neutral-300 border border-neutral-800 rounded-sm text-xs font-mono transition-colors cursor-pointer"
           >
-            <ArrowLeftRight className="w-3.5 h-3.5 text-cyan-400" />
+            <ArrowLeftRight className="w-3.5 h-3.5 text-neutral-400" />
             <span>Transaction Log</span>
           </button>
         )}
@@ -257,16 +234,16 @@ export const PaymentStatusCard: React.FC<PaymentStatusCardProps> = ({
 
       {/* Uncertainty & Recovery Banner */}
       {isUncertain && (
-        <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-sm space-y-3 font-mono">
+        <div className="p-4 bg-neutral-950 border border-neutral-800 rounded-sm space-y-3 font-mono">
           <div className="flex items-start space-x-3">
-            <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+            <AlertTriangle className="w-5 h-5 text-neutral-300 flex-shrink-0 mt-0.5" />
             <div>
-              <h4 className="text-xs font-bold text-amber-300 uppercase tracking-wider">
+              <h4 className="text-xs font-bold text-white uppercase tracking-wider">
                 Provider Timeout — Blind Retries Prevented
               </h4>
-              <p className="text-xs text-amber-300/80 mt-1 leading-relaxed">
+              <p className="text-xs text-neutral-400 mt-1 leading-relaxed">
                 The mock provider timed out. Per institutional best practices, this attempt was marked as{' '}
-                <strong>UNCERTAIN</strong> rather than blindly charged or retried. Use safe status inquiry to reconcile:
+                <strong className="text-white">UNCERTAIN</strong> rather than blindly charged or retried. Use safe status inquiry to reconcile:
               </p>
             </div>
           </div>
@@ -274,14 +251,14 @@ export const PaymentStatusCard: React.FC<PaymentStatusCardProps> = ({
             <button
               onClick={() => handleReconcile('SUCCESS')}
               disabled={isReconciling}
-              className="px-3.5 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 rounded-sm text-xs font-bold transition-colors disabled:opacity-50 cursor-pointer"
+              className="px-3.5 py-1.5 bg-white hover:bg-neutral-200 text-black rounded-sm text-xs font-bold transition-colors disabled:opacity-50 cursor-pointer"
             >
               Inquire & Reconcile as SUCCEEDED
             </button>
             <button
               onClick={() => handleReconcile('DECLINE')}
               disabled={isReconciling}
-              className="px-3.5 py-1.5 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 rounded-sm text-xs font-bold transition-colors disabled:opacity-50 cursor-pointer"
+              className="px-3.5 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border border-neutral-700 rounded-sm text-xs font-bold transition-colors disabled:opacity-50 cursor-pointer"
             >
               Inquire & Reconcile as FAILED
             </button>
@@ -290,54 +267,38 @@ export const PaymentStatusCard: React.FC<PaymentStatusCardProps> = ({
       )}
 
       {/* State Machine Transition Trace */}
-      <div className="py-4 border-b border-[#182030]">
-        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-3 font-mono">
+      <div className="py-4 border-b border-neutral-900">
+        <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400 block mb-3 font-mono">
           State Machine Lifecycle & Transition Trace
         </span>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs font-mono">
-          <div className="p-3 rounded-sm bg-[#080b10] border border-emerald-500/30 flex items-center space-x-2.5">
-            <div className="w-5 h-5 rounded-sm bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs">
+          <div className="p-3 rounded-sm bg-black border border-neutral-800 flex items-center space-x-2.5">
+            <div className="w-5 h-5 rounded-sm bg-neutral-900 text-white flex items-center justify-center font-bold text-xs border border-neutral-700">
               ✓
             </div>
             <div>
-              <span className="text-slate-400 block text-[10px] uppercase tracking-wider">1. CREATED</span>
-              <span className="text-slate-200 text-xs">Record initialized</span>
+              <span className="text-neutral-500 block text-[10px] uppercase tracking-wider">1. CREATED</span>
+              <span className="text-neutral-200 text-xs">Record initialized</span>
             </div>
           </div>
 
-          <div className="p-3 rounded-sm bg-[#080b10] border border-emerald-500/30 flex items-center space-x-2.5">
-            <div className="w-5 h-5 rounded-sm bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs">
+          <div className="p-3 rounded-sm bg-black border border-neutral-800 flex items-center space-x-2.5">
+            <div className="w-5 h-5 rounded-sm bg-neutral-900 text-white flex items-center justify-center font-bold text-xs border border-neutral-700">
               ✓
             </div>
             <div>
-              <span className="text-slate-400 block text-[10px] uppercase tracking-wider">2. PROCESSING</span>
-              <span className="text-slate-200 text-xs">Provider execution</span>
+              <span className="text-neutral-500 block text-[10px] uppercase tracking-wider">2. PROCESSING</span>
+              <span className="text-neutral-200 text-xs">Provider execution</span>
             </div>
           </div>
 
-          <div
-            className={`p-3 rounded-sm bg-[#080b10] border flex items-center space-x-2.5 ${
-              isSuccess
-                ? 'border-emerald-500/40'
-                : isFailed
-                ? 'border-rose-500/40'
-                : 'border-amber-500/40'
-            }`}
-          >
-            <div
-              className={`w-5 h-5 rounded-sm flex items-center justify-center font-bold text-xs ${
-                isSuccess
-                  ? 'bg-emerald-500/20 text-emerald-400'
-                  : isFailed
-                  ? 'bg-rose-500/20 text-rose-400'
-                  : 'bg-amber-500/20 text-amber-400'
-              }`}
-            >
+          <div className="p-3 rounded-sm bg-black border border-neutral-800 flex items-center space-x-2.5">
+            <div className="w-5 h-5 rounded-sm bg-neutral-900 text-white flex items-center justify-center font-bold text-xs border border-neutral-700">
               {isSuccess ? '✓' : isFailed ? '✕' : '?'}
             </div>
             <div>
-              <span className="text-slate-400 block text-[10px] uppercase tracking-wider">3. {payment.status}</span>
-              <span className="text-slate-200 text-xs">
+              <span className="text-neutral-500 block text-[10px] uppercase tracking-wider">3. {payment.status}</span>
+              <span className="text-neutral-200 text-xs">
                 {isSuccess
                   ? 'Terminal success'
                   : isFailed
@@ -351,20 +312,20 @@ export const PaymentStatusCard: React.FC<PaymentStatusCardProps> = ({
 
       {/* Refunds Management Section (Only for SUCCEEDED payments) */}
       {isSuccess && (
-        <div className="py-4 border-b border-[#182030] space-y-4">
+        <div className="py-4 border-b border-neutral-900 space-y-4">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-300 flex items-center space-x-1.5 font-mono">
-              <RotateCcw className="w-4 h-4 text-purple-400" />
+            <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-300 flex items-center space-x-1.5 font-mono">
+              <RotateCcw className="w-4 h-4 text-white" />
               <span>Refund Desk</span>
             </span>
-            <span className="text-xs text-slate-400 font-mono">
+            <span className="text-xs text-neutral-400 font-mono">
               Available to Refund:{' '}
-              <strong className="text-emerald-400 tabular-nums">{formatINR(remainingRefundableMinor)}</strong>
+              <strong className="text-white tabular-nums">{formatINR(remainingRefundableMinor)}</strong>
             </span>
           </div>
 
           {remainingRefundableMinor > 0 ? (
-            <div className="p-4 rounded-sm bg-[#080b10] border border-[#182030] space-y-3">
+            <div className="p-4 rounded-sm bg-black border border-neutral-850 space-y-3">
               <div className="flex flex-col sm:flex-row items-center gap-3">
                 <input
                   type="number"
@@ -372,13 +333,13 @@ export const PaymentStatusCard: React.FC<PaymentStatusCardProps> = ({
                   value={refundAmountRupees}
                   onChange={(e) => setRefundAmountRupees(e.target.value)}
                   disabled={isRefunding}
-                  className="w-full sm:flex-1 bg-[#0c1017] border border-[#182030] rounded-sm px-3.5 py-2 text-xs font-mono text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500"
+                  className="w-full sm:flex-1 bg-black border border-neutral-800 rounded-sm px-3.5 py-2 text-xs font-mono text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-neutral-600"
                 />
                 <button
                   type="button"
                   onClick={() => handleCreateRefund(false)}
                   disabled={isRefunding || !refundAmountRupees}
-                  className="w-full sm:w-auto px-4 py-2 bg-[#111724] hover:bg-[#151e2f] text-slate-200 border border-[#23304b] rounded-sm text-xs font-mono disabled:opacity-50 transition-colors cursor-pointer"
+                  className="w-full sm:w-auto px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-neutral-200 border border-neutral-800 rounded-sm text-xs font-mono disabled:opacity-50 transition-colors cursor-pointer"
                 >
                   {isRefunding ? 'Processing...' : 'Refund Partial'}
                 </button>
@@ -386,21 +347,21 @@ export const PaymentStatusCard: React.FC<PaymentStatusCardProps> = ({
                   type="button"
                   onClick={() => handleCreateRefund(true)}
                   disabled={isRefunding}
-                  className="w-full sm:w-auto px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-sm text-xs font-bold disabled:opacity-50 transition-colors cursor-pointer shadow-terminal"
+                  className="w-full sm:w-auto px-4 py-2 bg-white hover:bg-neutral-200 text-black font-bold rounded-sm text-xs disabled:opacity-50 transition-colors cursor-pointer"
                 >
                   Refund Full ({formatINR(remainingRefundableMinor)})
                 </button>
               </div>
 
               {refundError && (
-                <div className="p-2.5 bg-rose-500/10 border border-rose-500/30 rounded-sm text-xs text-rose-300 font-mono">
+                <div className="p-2.5 bg-neutral-900 border border-red-900/40 rounded-sm text-xs text-red-300 font-mono">
                   {refundError}
                 </div>
               )}
             </div>
           ) : (
-            <div className="p-3 bg-[#080b10] border border-[#182030] rounded-sm text-xs text-slate-400 flex items-center space-x-2 font-mono">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+            <div className="p-3 bg-black border border-neutral-850 rounded-sm text-xs text-neutral-400 flex items-center space-x-2 font-mono">
+              <CheckCircle2 className="w-4 h-4 text-white flex-shrink-0" />
               <span>This payment is fully refunded. No additional refunds can be issued.</span>
             </div>
           )}
@@ -408,22 +369,22 @@ export const PaymentStatusCard: React.FC<PaymentStatusCardProps> = ({
           {/* List of issued refunds */}
           {refunds.length > 0 && (
             <div className="space-y-2">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block font-mono">
+              <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider block font-mono">
                 Recorded Reversals ({refunds.length}):
               </span>
               <div className="space-y-1.5 text-xs font-mono">
                 {refunds.map((ref: Refund) => (
                   <div
                     key={ref.id}
-                    className="p-2.5 rounded-sm bg-[#080b10] border border-[#182030] flex justify-between items-center"
+                    className="p-2.5 rounded-sm bg-black border border-neutral-850 flex justify-between items-center"
                   >
                     <div>
-                      <span className="text-purple-400 font-semibold">{ref.refundReference}</span>
-                      <span className="text-slate-500 ml-2">({ref.reason || 'Refund'})</span>
+                      <span className="text-white font-semibold">{ref.refundReference}</span>
+                      <span className="text-neutral-500 ml-2">({ref.reason || 'Refund'})</span>
                     </div>
                     <div className="text-right">
-                      <span className="text-purple-300 font-bold tabular-nums">-{formatINR(ref.amountMinor)}</span>
-                      <span className="text-[10px] text-slate-500 block">
+                      <span className="text-white font-bold tabular-nums">-{formatINR(ref.amountMinor)}</span>
+                      <span className="text-[10px] text-neutral-500 block">
                         {new Date(ref.createdAt).toLocaleTimeString()}
                       </span>
                     </div>
@@ -436,50 +397,50 @@ export const PaymentStatusCard: React.FC<PaymentStatusCardProps> = ({
       )}
 
       {/* Transaction Details Table */}
-      <div className="py-4 border-b border-[#182030] space-y-2.5 font-mono text-xs">
-        <div className="flex flex-col sm:flex-row sm:justify-between py-1 border-b border-[#111724]">
-          <span className="text-slate-500 text-[11px] uppercase tracking-wider">Database UUID</span>
+      <div className="py-4 border-b border-neutral-900 space-y-2.5 font-mono text-xs">
+        <div className="flex flex-col sm:flex-row sm:justify-between py-1 border-b border-neutral-900/60">
+          <span className="text-neutral-500 text-[11px] uppercase tracking-wider">Database UUID</span>
           <div className="flex items-center space-x-1">
-            <span className="text-slate-300 select-all">{payment.id}</span>
-            <button onClick={() => handleCopy(payment.id, 'id')} className="p-1 text-slate-500 hover:text-white cursor-pointer">
-              {copiedKey === 'id' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+            <span className="text-neutral-300 select-all">{payment.id}</span>
+            <button onClick={() => handleCopy(payment.id, 'id')} className="p-1 text-neutral-500 hover:text-white cursor-pointer">
+              {copiedKey === 'id' ? <Check className="w-3.5 h-3.5 text-white" /> : <Copy className="w-3.5 h-3.5" />}
             </button>
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row sm:justify-between py-1 border-b border-[#111724]">
-          <span className="text-slate-500 text-[11px] uppercase tracking-wider">Payment Reference</span>
+        <div className="flex flex-col sm:flex-row sm:justify-between py-1 border-b border-neutral-900/60">
+          <span className="text-neutral-500 text-[11px] uppercase tracking-wider">Payment Reference</span>
           <div className="flex items-center space-x-1">
-            <span className="text-cyan-400 select-all font-semibold">{payment.paymentReference}</span>
-            <button onClick={() => handleCopy(payment.paymentReference, 'ref')} className="p-1 text-slate-500 hover:text-white cursor-pointer">
-              {copiedKey === 'ref' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+            <span className="text-white select-all font-semibold">{payment.paymentReference}</span>
+            <button onClick={() => handleCopy(payment.paymentReference, 'ref')} className="p-1 text-neutral-500 hover:text-white cursor-pointer">
+              {copiedKey === 'ref' ? <Check className="w-3.5 h-3.5 text-white" /> : <Copy className="w-3.5 h-3.5" />}
             </button>
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row sm:justify-between py-1 border-b border-[#111724]">
-          <span className="text-slate-500 text-[11px] uppercase tracking-wider">Order ID</span>
-          <span className="text-slate-300 select-all">{payment.orderId}</span>
+        <div className="flex flex-col sm:flex-row sm:justify-between py-1 border-b border-neutral-900/60">
+          <span className="text-neutral-500 text-[11px] uppercase tracking-wider">Order ID</span>
+          <span className="text-neutral-300 select-all">{payment.orderId}</span>
         </div>
 
         {payment.failureReason && (
-          <div className="flex flex-col sm:flex-row sm:justify-between py-1.5 border border-rose-900/40 bg-rose-500/10 px-2 rounded-sm">
-            <span className="text-rose-400 font-bold flex items-center space-x-1">
+          <div className="flex flex-col sm:flex-row sm:justify-between py-1.5 border border-red-900/40 bg-neutral-900 px-2 rounded-sm">
+            <span className="text-red-400 font-bold flex items-center space-x-1">
               <AlertOctagon className="w-3.5 h-3.5 mr-1" /> Failure Reason:
             </span>
-            <span className="text-rose-300 font-bold">{payment.failureReason}</span>
+            <span className="text-red-300 font-bold">{payment.failureReason}</span>
           </div>
         )}
 
         <div className="flex flex-col sm:flex-row sm:justify-between py-1">
-          <span className="text-slate-500 text-[11px] uppercase tracking-wider">Timestamp</span>
-          <span className="text-slate-400">{new Date(payment.createdAt).toLocaleString()}</span>
+          <span className="text-neutral-500 text-[11px] uppercase tracking-wider">Timestamp</span>
+          <span className="text-neutral-400">{new Date(payment.createdAt).toLocaleString()}</span>
         </div>
       </div>
 
       {/* Status verification message */}
       {refreshMessage && (
-        <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-sm text-center text-xs text-emerald-300 font-mono">
+        <div className="p-3 bg-neutral-900 border border-neutral-800 rounded-sm text-center text-xs text-white font-mono">
           {refreshMessage}
         </div>
       )}
@@ -490,19 +451,19 @@ export const PaymentStatusCard: React.FC<PaymentStatusCardProps> = ({
           type="button"
           onClick={handleVerifyStatus}
           disabled={isRefreshing}
-          className="w-full sm:w-auto px-4 py-2 bg-[#111724] hover:bg-[#151e2f] text-slate-200 rounded-sm text-xs font-mono flex items-center justify-center space-x-2 border border-[#182030] transition-colors cursor-pointer"
+          className="w-full sm:w-auto px-4 py-2 bg-black hover:bg-neutral-900 text-neutral-300 rounded-sm text-xs font-mono flex items-center justify-center space-x-2 border border-neutral-800 transition-colors cursor-pointer"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-cyan-400' : ''}`} />
+          <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-white' : ''}`} />
           <span>Verify State Live in DB</span>
         </button>
 
         <button
           type="button"
           onClick={onReset}
-          className="w-full sm:w-auto px-5 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-sm text-xs flex items-center justify-center space-x-2 transition-all shadow-terminal cursor-pointer"
+          className="w-full sm:w-auto px-5 py-2 bg-white hover:bg-neutral-200 text-black font-bold rounded-sm text-xs flex items-center justify-center space-x-2 transition-all cursor-pointer"
         >
           <span>Create Another Payment</span>
-          <ArrowRight className="w-4 h-4" />
+          <ArrowRight className="w-4 h-4 text-black" />
         </button>
       </div>
     </div>

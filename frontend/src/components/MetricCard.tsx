@@ -31,19 +31,19 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   const isNegative = status === 'loss' || (changePercent !== undefined && changePercent < 0);
 
   const statusColor = isPositive
-    ? 'text-emerald-400'
+    ? 'text-white'
     : isNegative
-    ? 'text-rose-400'
+    ? 'text-neutral-400'
     : status === 'warn'
-    ? 'text-amber-400'
-    : 'text-slate-400';
+    ? 'text-neutral-300'
+    : 'text-neutral-400';
 
   return (
     <div
-      className={`bg-[#0d131f] border border-[#1b253b] hover:border-[#263553] p-4 rounded-md transition-all duration-200 ${className}`}
+      className={`bg-[#050505] border border-neutral-850 hover:border-neutral-800 p-4 rounded-md transition-all duration-200 ${className}`}
     >
       <div className="flex items-center justify-between gap-2 mb-2">
-        <span className="text-[11px] uppercase tracking-wider font-semibold text-slate-400 font-mono flex items-center gap-1.5">
+        <span className="text-[11px] uppercase tracking-wider font-semibold text-neutral-400 font-mono flex items-center gap-1.5">
           {label}
         </span>
         {badgeText && (
@@ -54,7 +54,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
             {badgeText}
           </Badge>
         )}
-        {Icon && <Icon className="w-4 h-4 text-slate-500" />}
+        {Icon && <Icon className="w-4 h-4 text-neutral-500" />}
       </div>
 
       <div className="flex items-baseline justify-between gap-2">

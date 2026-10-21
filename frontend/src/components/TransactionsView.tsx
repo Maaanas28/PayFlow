@@ -82,18 +82,18 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
   return (
     <div className="space-y-5">
       {/* Top Header Command Strip */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#182030]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-neutral-900">
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-xl font-bold text-white tracking-tight font-mono uppercase flex items-center space-x-2">
-              <CreditCard className="w-5 h-5 text-cyan-400" />
+              <CreditCard className="w-5 h-5 text-white" />
               <span>PAYMENTS & TRANSACTIONS DESK</span>
             </h2>
-            <Badge variant="live" size="xs">
+            <Badge variant="neutral" size="xs">
               {payments.length} RECORDS
             </Badge>
           </div>
-          <p className="text-xs text-slate-400 font-mono mt-0.5">
+          <p className="text-xs text-neutral-400 font-mono mt-0.5">
             Real-time transaction log persisted to PostgreSQL with strict status lifecycle tracking
           </p>
         </div>
@@ -101,29 +101,29 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
         <button
           onClick={fetchPayments}
           disabled={loading}
-          className="inline-flex items-center space-x-2 px-3 py-1.5 bg-[#151e2f] hover:bg-[#1c283f] text-slate-200 border border-[#23304b] rounded-sm text-xs font-mono font-medium transition-all disabled:opacity-50 cursor-pointer self-start sm:self-auto"
+          className="inline-flex items-center space-x-2 px-3 py-1.5 bg-black hover:bg-neutral-900 text-neutral-300 border border-neutral-800 rounded-sm text-xs font-mono font-medium transition-all disabled:opacity-50 cursor-pointer self-start sm:self-auto"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-cyan-400' : ''}`} />
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-white' : ''}`} />
           <span>Sync Log</span>
         </button>
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="bg-[#0d131f] rounded-sm p-3.5 border border-[#1b253b] flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between font-mono">
+      <div className="bg-[#050505] rounded-sm p-3.5 border border-neutral-850 flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between font-mono">
         <div className="relative flex-1">
-          <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 transform -translate-y-1/2" />
+          <Search className="w-3.5 h-3.5 text-neutral-500 absolute left-3 top-1/2 transform -translate-y-1/2" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by Payment Reference, Order ID, or UUID..."
-            className="w-full bg-[#101520] border border-[#182030] text-xs font-mono text-slate-100 placeholder:text-slate-500 pl-9 pr-3 py-1.5 rounded-sm focus:outline-none focus:border-cyan-500/50 transition-colors"
+            className="w-full bg-black border border-neutral-800 text-xs font-mono text-white placeholder:text-neutral-500 pl-9 pr-3 py-1.5 rounded-sm focus:outline-none focus:border-neutral-600 transition-colors"
           />
         </div>
 
         {/* Status Filters */}
         <div className="flex items-center space-x-1.5 overflow-x-auto pb-1 md:pb-0">
-          <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mr-1 flex items-center space-x-1">
+          <span className="text-[10px] text-neutral-500 uppercase tracking-wider font-semibold mr-1 flex items-center space-x-1">
             <Filter className="w-3 h-3" />
             <span>Filter:</span>
           </span>
@@ -133,8 +133,8 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
               onClick={() => setStatusFilter(status)}
               className={`px-2.5 py-1 rounded-sm text-[11px] font-mono tracking-wider uppercase transition-all cursor-pointer ${
                 statusFilter === status
-                  ? 'bg-[#141d2d] text-white font-bold border border-cyan-500/40'
-                  : 'bg-[#101622] text-slate-400 hover:text-slate-200 border border-[#182030]'
+                  ? 'bg-neutral-900 text-white font-bold border border-neutral-600'
+                  : 'bg-black text-neutral-400 hover:text-white border border-neutral-850'
               }`}
             >
               {status}
@@ -145,27 +145,27 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
 
       {/* Error Banner */}
       {error && (
-        <div className="p-3 bg-[#2a0e14] border border-[#6b1d28] rounded-sm flex items-center space-x-2 text-rose-300 text-xs font-mono">
-          <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-400" />
+        <div className="p-3 bg-neutral-900 border border-red-900/40 rounded-sm flex items-center space-x-2 text-red-300 text-xs font-mono">
+          <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-400" />
           <span>{error}</span>
         </div>
       )}
 
       {/* Transaction List / Table */}
-      <div className="bg-[#0d131f] rounded-sm border border-[#1b253b] overflow-hidden shadow-terminal">
+      <div className="bg-[#050505] rounded-sm border border-neutral-850 overflow-hidden">
         {loading ? (
-          <div className="py-16 text-center text-slate-400 text-xs font-mono flex flex-col items-center justify-center space-y-3">
-            <RefreshCw className="w-6 h-6 animate-spin text-cyan-400" />
+          <div className="py-16 text-center text-neutral-400 text-xs font-mono flex flex-col items-center justify-center space-y-3">
+            <RefreshCw className="w-6 h-6 animate-spin text-white" />
             <span>QUERYING POSTGRESQL TRANSACTION DATABASE...</span>
           </div>
         ) : filteredPayments.length === 0 ? (
-          <div className="py-16 text-center text-slate-400 text-xs font-mono flex flex-col items-center justify-center space-y-3">
-            <div className="w-10 h-10 rounded-sm bg-[#101520] flex items-center justify-center border border-[#182030]">
-              <CreditCard className="w-5 h-5 text-slate-600" />
+          <div className="py-16 text-center text-neutral-400 text-xs font-mono flex flex-col items-center justify-center space-y-3">
+            <div className="w-10 h-10 rounded-sm bg-neutral-900 flex items-center justify-center border border-neutral-800">
+              <CreditCard className="w-5 h-5 text-neutral-500" />
             </div>
             <div>
-              <p className="font-bold text-slate-300">NO TRANSACTIONS FOUND</p>
-              <p className="text-[11px] text-slate-500 mt-1">
+              <p className="font-bold text-white">NO TRANSACTIONS FOUND</p>
+              <p className="text-[11px] text-neutral-500 mt-1">
                 {searchQuery || statusFilter !== 'ALL'
                   ? 'Try clearing the search query or status filter.'
                   : 'Execute a payment simulation in Checkout Terminal to record your first transaction.'}
@@ -174,7 +174,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
             {!searchQuery && statusFilter === 'ALL' && (
               <button
                 onClick={onNavigateToCheckout}
-                className="mt-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-sm text-xs transition-colors cursor-pointer"
+                className="mt-2 px-3 py-1.5 bg-white hover:bg-neutral-200 text-black font-bold rounded-sm text-xs transition-colors cursor-pointer"
               >
                 Go to Checkout Terminal
               </button>
@@ -184,7 +184,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse font-mono">
               <thead>
-                <tr className="border-b border-[#182030] bg-[#0a0e17] text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                <tr className="border-b border-neutral-900 bg-[#0a0a0a] text-[10px] font-bold uppercase tracking-wider text-neutral-400">
                   <th className="py-2.5 px-4 sm:px-5">Payment Reference</th>
                   <th className="py-2.5 px-4">Amount (INR)</th>
                   <th className="py-2.5 px-4">Status</th>
@@ -193,32 +193,32 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                   <th className="py-2.5 px-4 sm:px-5 text-right">Inspect</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#141a27] text-xs">
+              <tbody className="divide-y divide-neutral-900 text-xs">
                 {filteredPayments.map((payment: PaymentAttempt) => (
                   <tr
                     key={payment.id}
                     onClick={() => setSelectedPayment(payment)}
-                    className="hover:bg-[#121824] transition-colors cursor-pointer group"
+                    className="hover:bg-neutral-950 transition-colors cursor-pointer group"
                   >
                     {/* Reference & Order ID */}
                     <td className="py-3 px-4 sm:px-5">
                       <div className="flex items-center space-x-2">
-                        <span className="font-mono font-bold text-white group-hover:text-cyan-300 transition-colors">
+                        <span className="font-mono font-bold text-white group-hover:underline transition-colors">
                           {payment.paymentReference}
                         </span>
                         <button
                           onClick={(e) => handleCopy(payment.paymentReference, payment.id, e)}
-                          className="text-slate-500 hover:text-white p-0.5 cursor-pointer"
+                          className="text-neutral-500 hover:text-white p-0.5 cursor-pointer"
                           title="Copy reference"
                         >
                           {copiedKey === payment.id ? (
-                            <Check className="w-3 h-3 text-emerald-400" />
+                            <Check className="w-3 h-3 text-white" />
                           ) : (
                             <Copy className="w-3 h-3" />
                           )}
                         </button>
                       </div>
-                      <span className="font-mono text-[10px] text-slate-500 block mt-0.5 truncate max-w-[220px]">
+                      <span className="font-mono text-[10px] text-neutral-500 block mt-0.5 truncate max-w-[220px]">
                         Order: {payment.orderId}
                       </span>
                     </td>
@@ -228,7 +228,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                       <span className="font-mono font-bold text-white tabular-nums">
                         {formatINR(payment.amountMinor)}
                       </span>
-                      <span className="block font-mono text-[10px] text-slate-500 tabular-nums">
+                      <span className="block font-mono text-[10px] text-neutral-500 tabular-nums">
                         {payment.amountMinor} paise
                       </span>
                     </td>
@@ -239,14 +239,14 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                     </td>
 
                     {/* Outcome */}
-                    <td className="py-3 px-4 hidden md:table-cell font-mono text-xs text-slate-400">
-                      <span className="px-1.5 py-0.5 rounded-sm bg-[#121824] border border-[#1b253b] text-[10px]">
+                    <td className="py-3 px-4 hidden md:table-cell font-mono text-xs text-neutral-400">
+                      <span className="px-1.5 py-0.5 rounded-sm bg-neutral-900 border border-neutral-800 text-[10px] text-neutral-300">
                         {payment.simulatedOutcome}
                       </span>
                     </td>
 
                     {/* Timestamp */}
-                    <td className="py-3 px-4 hidden lg:table-cell text-[11px] text-slate-400 font-mono tabular-nums">
+                    <td className="py-3 px-4 hidden lg:table-cell text-[11px] text-neutral-400 font-mono tabular-nums">
                       {new Date(payment.createdAt).toLocaleString()}
                     </td>
 
@@ -257,9 +257,9 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                           e.stopPropagation();
                           setSelectedPayment(payment);
                         }}
-                        className="inline-flex items-center space-x-1 px-2.5 py-1 bg-[#151e2f] hover:bg-[#1c283f] text-cyan-400 rounded-sm text-xs font-mono font-medium border border-[#23304b] transition-colors cursor-pointer"
+                        className="inline-flex items-center space-x-1 px-2.5 py-1 bg-black hover:bg-neutral-900 text-neutral-300 rounded-sm text-xs font-mono font-medium border border-neutral-800 transition-colors cursor-pointer"
                       >
-                        <Eye className="w-3.5 h-3.5" />
+                        <Eye className="w-3.5 h-3.5 text-neutral-400" />
                         <span>View</span>
                       </button>
                     </td>

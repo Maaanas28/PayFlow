@@ -177,7 +177,7 @@ export const App: React.FC = () => {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#080b10] text-slate-100 font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
+    <div className="flex h-screen overflow-hidden bg-black text-neutral-100 font-sans selection:bg-neutral-800 selection:text-white">
       {/* Mobile Backdrop */}
       {mobileMenuOpen && (
         <div
@@ -213,13 +213,13 @@ export const App: React.FC = () => {
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6 terminal-grid">
           {/* Offline Warning Banner */}
           {backendOnline === false && (
-            <div className="p-3 bg-[#2a0e14] border border-[#6b1d28] rounded-sm flex items-start space-x-3 text-rose-300 text-xs font-mono">
-              <Info className="w-4 h-4 flex-shrink-0 mt-0.5 text-rose-400" />
+            <div className="p-3 bg-neutral-950 border border-red-900/40 rounded-sm flex items-start space-x-3 text-red-300 text-xs font-mono">
+              <Info className="w-4 h-4 flex-shrink-0 mt-0.5 text-red-400" />
               <div>
                 <p className="font-bold">BACKEND_GATEWAY_OFFLINE</p>
-                <p className="text-[11px] text-rose-400/90 mt-0.5">
+                <p className="text-[11px] text-red-400/90 mt-0.5">
                   Unable to establish connection to core payment gateway at{' '}
-                  <code className="bg-[#121824] px-1 py-0.2 rounded border border-[#222d42]">
+                  <code className="bg-black px-1 py-0.5 rounded border border-neutral-800">
                     /api/v1/health
                   </code>
                   . Verify your server process or environment variables.
@@ -232,24 +232,24 @@ export const App: React.FC = () => {
           {activeTab === 'checkout' && (
             <div className="space-y-6">
               {/* Header Command Strip */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#182030]">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-neutral-900">
                 <div>
                   <div className="flex items-center gap-2">
                     <h1 className="text-xl font-bold tracking-tight text-white font-mono uppercase">
                       PAYMENT CHECKOUT TERMINAL
                     </h1>
-                    <Badge variant="live" size="xs">
+                    <Badge variant="neutral" size="xs">
                       SANDBOX DESK
                     </Badge>
                   </div>
-                  <p className="text-xs text-slate-400 font-mono mt-0.5">
+                  <p className="text-xs text-neutral-400 font-mono mt-0.5">
                     Deterministic order authorization, idempotency SHA-256 verification, and double-entry capture
                   </p>
                 </div>
 
                 <div className="flex items-center gap-2 text-xs font-mono">
-                  <div className="px-2.5 py-1 rounded-sm bg-[#0d131f] border border-[#1b253b] text-slate-400">
-                    PROVIDER: <span className="text-emerald-400 font-bold">MOCK_SANDBOX</span>
+                  <div className="px-2.5 py-1 rounded-sm bg-black border border-neutral-850 text-neutral-400">
+                    PROVIDER: <span className="text-white font-bold">MOCK_SANDBOX</span>
                   </div>
                 </div>
               </div>
@@ -275,14 +275,14 @@ export const App: React.FC = () => {
                       disabled={isProcessing}
                     />
 
-                    <div className="p-3.5 rounded-sm bg-[#0d131f] border border-[#1b253b] text-xs font-mono space-y-1.5">
-                      <div className="font-bold text-slate-200 flex items-center space-x-1.5">
-                        <TerminalSquare className="w-3.5 h-3.5 text-cyan-400" />
+                    <div className="p-3.5 rounded-sm bg-[#050505] border border-neutral-850 text-xs font-mono space-y-1.5">
+                      <div className="font-bold text-white flex items-center space-x-1.5">
+                        <TerminalSquare className="w-3.5 h-3.5 text-neutral-300" />
                         <span className="uppercase text-[11px] tracking-wider">GATEWAY PROTOCOL SEQUENCE:</span>
                       </div>
-                      <div className="text-[11px] text-slate-400 pl-5 leading-relaxed">
+                      <div className="text-[11px] text-neutral-400 pl-5 leading-relaxed">
                         POST /api/v1/orders ➔ Order CREATED ➔ POST /api/v1/payments (Idempotency-Key) ➔ State Machine: CREATED ➔ PROCESSING ➔{' '}
-                        <span className={outcome === 'SUCCESS' ? 'text-emerald-400 font-bold' : outcome === 'DECLINE' ? 'text-rose-400 font-bold' : 'text-amber-400 font-bold'}>
+                        <span className={outcome === 'SUCCESS' ? 'text-white font-bold' : outcome === 'DECLINE' ? 'text-neutral-300 font-bold' : 'text-neutral-400 font-bold'}>
                           {outcome === 'SUCCESS' ? 'SUCCEEDED [Ledger Posted & Webhook Emitted]' : outcome === 'DECLINE' ? 'FAILED' : 'UNCERTAIN'}
                         </span>
                       </div>
@@ -337,18 +337,18 @@ export const App: React.FC = () => {
           )}
 
           {/* Bottom Telemetry Footer */}
-          <footer className="pt-6 pb-2 border-t border-[#182030] text-[11px] font-mono text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-2">
+          <footer className="pt-6 pb-2 border-t border-neutral-900 text-[11px] font-mono text-neutral-500 flex flex-col sm:flex-row items-center justify-between gap-2">
             <div>
               PayFlow Sandbox Financial Architecture • TypeScript, Express, PostgreSQL & Prisma
             </div>
             <div className="flex items-center gap-3">
-              <span className="flex items-center gap-1.5 text-slate-400">
-                <Database className="w-3.5 h-3.5 text-cyan-400" />
+              <span className="flex items-center gap-1.5 text-neutral-400">
+                <Database className="w-3.5 h-3.5 text-neutral-400" />
                 <span>PostgreSQL 16</span>
               </span>
               <span>•</span>
-              <span className="flex items-center gap-1.5 text-slate-400">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="flex items-center gap-1.5 text-neutral-400">
+                <ShieldCheck className="w-3.5 h-3.5 text-neutral-400" />
                 <span>Ledger Invariant Checked</span>
               </span>
             </div>
