@@ -5,6 +5,7 @@ import {
   ChevronDown,
   Menu,
   Coins,
+  Home,
 } from 'lucide-react';
 
 export type NavTab = 'checkout' | 'transactions' | 'refunds' | 'ledger' | 'webhooks';
@@ -13,12 +14,14 @@ interface HeaderProps {
   backendOnline: boolean | null;
   onOpenLookup: () => void;
   onToggleMobileMenu?: () => void;
+  onGoToLanding?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   backendOnline,
   onOpenLookup,
   onToggleMobileMenu,
+  onGoToLanding,
 }) => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
@@ -57,6 +60,18 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Header Actions */}
       <div className="flex items-center gap-3">
+        {/* Overview Landing Page Link */}
+        {onGoToLanding && (
+          <button
+            onClick={onGoToLanding}
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-sm bg-[#0d131f] hover:bg-[#151c2a] border border-[#1b253b] hover:border-[#222d42] text-[10px] font-mono text-slate-300 transition-colors cursor-pointer"
+            title="Return to Landing Page"
+          >
+            <Home className="w-3.5 h-3.5 text-cyan-400" />
+            <span>OVERVIEW</span>
+          </button>
+        )}
+
         {/* Currency & Arithmetic Badge */}
         <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-sm bg-[#0d131f] border border-[#1b253b] text-[10px] font-mono text-slate-300">
           <Coins className="w-3.5 h-3.5 text-amber-400" />
@@ -116,7 +131,19 @@ export const Header: React.FC<HeaderProps> = ({
                   <span className="text-slate-200">SHA-256 Request Hash</span>
                 </div>
               </div>
-              <div className="px-2 py-1.5">
+              <div className="px-2 py-1.5 space-y-1">
+                {onGoToLanding && (
+                  <button
+                    onClick={() => {
+                      setShowProfileMenu(false);
+                      onGoToLanding();
+                    }}
+                    className="w-full text-left px-2 py-1.5 text-slate-300 hover:text-white hover:bg-[#162032] rounded-sm flex items-center gap-2 transition-colors cursor-pointer"
+                  >
+                    <Home className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Return to Landing Page</span>
+                  </button>
+                )}
                 <button
                   onClick={() => {
                     setShowProfileMenu(false);

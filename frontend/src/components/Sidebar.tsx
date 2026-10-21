@@ -22,6 +22,7 @@ interface SidebarProps {
   onCloseMobile: () => void;
   backendOnline: boolean | null;
   onOpenLookup: () => void;
+  onGoToLanding?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -33,6 +34,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onCloseMobile,
   backendOnline,
   onOpenLookup,
+  onGoToLanding,
 }) => {
   const navItems: { id: NavTab; label: string; icon: React.ElementType; badge?: string }[] = [
     { id: 'checkout', label: 'Checkout Terminal', icon: CreditCard, badge: '99900' },
@@ -55,13 +57,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
     >
       {/* Brand Header */}
       <div className="h-14 flex items-center px-4 border-b border-[#182030] justify-between">
-        <div className="flex items-center gap-2.5 overflow-hidden">
-          <div className="w-8 h-8 rounded-sm bg-[#141d2d] border border-cyan-500/30 flex items-center justify-center shrink-0 shadow-sm shadow-cyan-500/20">
+        <div
+          onClick={onGoToLanding}
+          className={`flex items-center gap-2.5 overflow-hidden ${
+            onGoToLanding ? 'cursor-pointer group' : ''
+          }`}
+          title={onGoToLanding ? 'Return to Landing Page' : undefined}
+        >
+          <div className="w-8 h-8 rounded-sm bg-[#141d2d] border border-cyan-500/30 group-hover:border-cyan-400 flex items-center justify-center shrink-0 shadow-sm shadow-cyan-500/20 transition-colors">
             <ShieldCheck className="w-4 h-4 text-cyan-400" />
           </div>
           {(!isCollapsed || isMobile) && (
             <div className="flex flex-col">
-              <span className="font-mono font-bold text-sm tracking-wider text-white flex items-center gap-1.5">
+              <span className="font-mono font-bold text-sm tracking-wider text-white flex items-center gap-1.5 group-hover:text-cyan-300 transition-colors">
                 PAYFLOW <span className="text-cyan-400 text-xs px-1 py-0.2 rounded bg-cyan-950/60 border border-cyan-800/40">SANDBOX</span>
               </span>
               <span className="text-[9px] uppercase tracking-widest text-slate-500 font-mono">

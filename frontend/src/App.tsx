@@ -13,6 +13,7 @@ import { ProductCatalogItem, SimulatedOutcome, PaymentAttempt } from './types';
 import { api } from './services/api';
 import { TerminalSquare, Info, ShieldCheck, Database } from 'lucide-react';
 import { Badge } from './components/Badge';
+import { LandingPage } from './components/LandingPage';
 
 const DEFAULT_PRODUCT: ProductCatalogItem = {
   id: 'prod_sample_001',
@@ -24,6 +25,15 @@ const DEFAULT_PRODUCT: ProductCatalogItem = {
 };
 
 export const App: React.FC = () => {
+  // View mode: 'landing' vs 'app'
+  const [viewMode, setViewMode] = useState<'landing' | 'app'>(() => {
+    const hash = window.location.hash.toLowerCase();
+    if (['#terminal', '#checkout', '#transactions', '#refunds', '#ledger', '#webhooks'].includes(hash)) {
+      return 'app';
+    }
+    return 'landing';
+  });
+
   const [activeTab, setActiveTab] = useState<NavTab>('checkout');
   const [product, setProduct] = useState<ProductCatalogItem>(DEFAULT_PRODUCT);
   const [quantity, setQuantity] = useState<number>(1);
@@ -74,6 +84,37 @@ export const App: React.FC = () => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  // Sync viewMode and activeTab with URL hash for seamless bookmarking/history
+  useEffect(() => {
+    const handleHash = () => {
+      const hash = window.location.hash.toLowerCase();
+      if (['#terminal', '#checkout', '#transactions', '#refunds', '#ledger', '#webhooks'].includes(hash)) {
+        setViewMode('app');
+        if (hash === '#transactions') setActiveTab('transactions');
+        else if (hash === '#refunds') setActiveTab('refunds');
+        else if (hash === '#ledger') setActiveTab('ledger');
+        else if (hash === '#webhooks') setActiveTab('webhooks');
+        else setActiveTab('checkout');
+      } else if (hash === '#landing' || hash === '' || hash === '#') {
+        setViewMode('landing');
+      }
+    };
+    handleHash();
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
+  }, []);
+
+  const handleEnterApp = (tab: NavTab = 'checkout') => {
+    setActiveTab(tab);
+    setViewMode('app');
+    window.location.hash = `#${tab}`;
+  };
+
+  const handleGoToLanding = () => {
+    setViewMode('landing');
+    window.location.hash = '#landing';
+  };
 
   // Fetch catalog products if available
   useEffect(() => {
@@ -130,6 +171,11 @@ export const App: React.FC = () => {
     setActiveTab('refunds');
   };
 
+  // If viewing the Landing Page
+  if (viewMode === 'landing') {
+    return <LandingPage onEnterApp={handleEnterApp} backendOnline={backendOnline} />;
+  }
+
   return (
     <div className="flex h-screen overflow-hidden bg-[#080b10] text-slate-100 font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
       {/* Mobile Backdrop */}
@@ -150,6 +196,7 @@ export const App: React.FC = () => {
         onCloseMobile={() => setMobileMenuOpen(false)}
         backendOnline={backendOnline}
         onOpenLookup={() => setLookupOpen(true)}
+        onGoToLanding={handleGoToLanding}
       />
 
       {/* Main Content Area */}
@@ -159,6 +206,7 @@ export const App: React.FC = () => {
           backendOnline={backendOnline}
           onOpenLookup={() => setLookupOpen(true)}
           onToggleMobileMenu={() => setMobileMenuOpen(!mobileMenuOpen)}
+          onGoToLanding={handleGoToLanding}
         />
 
         {/* Scrollable Viewport with Terminal Grid */}
